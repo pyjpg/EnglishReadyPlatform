@@ -8,8 +8,12 @@ const WritingMode = ({
   handleSubmit, 
   setIsWritingMode,
   grammarAnalysis,
-  lexicalAnalysis 
+  lexicalAnalysis,
+  taskAchievementAnalysis
 }) => {
+  console.log("Task Achievement Data:", taskAchievementAnalysis);
+  console.log("Grammar Analysis Data:", grammarAnalysis);
+  console.log("Lexical Analysis Data:", lexicalAnalysis);
   return (
     <div className="fixed inset-0 bg-white flex">
       {/* Main Content */}
@@ -87,6 +91,7 @@ const WritingMode = ({
         setIsWritingMode={setIsWritingMode}
         grammarAnalysis={grammarAnalysis}
         lexicalAnalysis={lexicalAnalysis}
+        taskAchievementAnalysis={taskAchievementAnalysis}
       />
     </div>
   );
@@ -100,6 +105,7 @@ WritingMode.propTypes = {
   setIsWritingMode: PropTypes.func.isRequired,
   grammarAnalysis: PropTypes.object,
   lexicalAnalysis: PropTypes.object,
+  taskAchievementAnalysis: PropTypes.object,
 };
 
 export default WritingMode;

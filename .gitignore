@@ -1,0 +1,4 @@
+*.db
+/ML-Models/app/services/__pycache__
+*.db
+/ML-Models/app/services/__pycache__

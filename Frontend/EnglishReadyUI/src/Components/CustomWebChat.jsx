@@ -12,6 +12,7 @@ function CustomWebChat({ directLine }) {
   const [submissionStatus, setSubmissionStatus] = useState(null);
   const [grammarAnalysis, setGrammarAnalysis] = useState(null);
   const [lexicalAnalysis, setLexicalAnalysis] = useState(null);
+  const [taskAchievementAnalysis, setTaskAchievementAnalysis] = useState(null);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -58,6 +59,7 @@ function CustomWebChat({ directLine }) {
 
     setSubmissionStatus(null);
     setGrammarAnalysis(null);
+    setTaskAchievementAnalysis(null);
     setLexicalAnalysis(null); 
     
     try {
@@ -68,7 +70,7 @@ function CustomWebChat({ directLine }) {
         },
         body: JSON.stringify({
           text: text,
-          task_type: 'IELTS_Writing',
+          task_type: 'argument',
           question_number: 3
         }),
       });
@@ -86,7 +88,8 @@ function CustomWebChat({ directLine }) {
       
       setGrade(data.grade || 75);
       setGrammarAnalysis(data.grammar_analysis);
-      setLexicalAnalysis(data.lexical_analysis) // Set grammar analysis from response
+      setLexicalAnalysis(data.lexical_analysis);
+      setTaskAchievementAnalysis(data.task_achievement_analysis); // Fixed this line
       setSubmissionStatus('success');
 
       if (directLine) {
@@ -115,6 +118,7 @@ function CustomWebChat({ directLine }) {
         setIsWritingMode={setIsWritingMode}
         grammarAnalysis={grammarAnalysis}
         lexicalAnalysis={lexicalAnalysis}
+        taskAchievementAnalysis={taskAchievementAnalysis} // Added this prop
       />
     );
   }
