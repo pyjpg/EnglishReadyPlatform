@@ -31,6 +31,9 @@ class Submission(Base):
     task_achievement_feedback = Column(JSON, nullable=True)  # Stores TaskAchievementFeedback structure
     task_achievement_analysis = Column(JSON, nullable=True)  # Stores complete task achievement analysis
 
+    coherence_score = Column(Float, nullable=True)
+    coherence_feedback = Column(JSON, nullable=True)  # Stores CoherenceFeedback structure
+    coherence_analysis = Column(JSON, nullable=True) 
     def to_dict(self):
         """Convert model instance to dictionary with proper nested structure"""
         return {

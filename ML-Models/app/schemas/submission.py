@@ -1,7 +1,16 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from .feedback import LexicalFeedback
+class CoherenceFeedback(BaseModel):
+    strengths: List[str]
+    improvements: List[str]
+    detailed_suggestions: Dict[str, List[str]]
 
+class CoherenceAnalysis(BaseModel):
+    overall_score: float
+    component_scores: Dict[str, float]
+    detailed_analysis: Dict[str, Any]
+    feedback: CoherenceFeedback
 class SubmissionBase(BaseModel):
     text: str
     task_type: str
@@ -53,6 +62,9 @@ class SubmissionResponse(SubmissionBase):
     task_achievement_score: Optional[float]
     task_achievement_feedback: Optional[TaskAchievementFeedback]
     task_achievement_analysis: Optional[TaskAchievementAnalysis]
+    coherence_score: Optional[float]
+    coherence_feedback: Optional[CoherenceFeedback]
+    coherence_analysis: Optional[CoherenceAnalysis]
 
     class Config:
         orm_mode = True

@@ -10,6 +10,7 @@ import nltk
 from nltk.tokenize import sent_tokenize
 from .services.lexical_service import LexicalService
 from .services.taskachievement_service import TaskAchievementService
+from .services.CoherenceCohensionService import CoherenceCohesionService
 import logging
 
 # Configure logging
@@ -92,14 +93,16 @@ app = FastAPI()
 # Initialize GrammarService
 grammar_service = None
 lexical_service = None
+coherence_service = None    
 taskachievement_service = None
 @app.on_event("startup")
 async def startup_event():
-    global grammar_service, lexical_service, taskachievement_service
+    global grammar_service, lexical_service, taskachievement_service, coherence_service
     try:
         grammar_service = GrammarService()
         lexical_service = LexicalService()
         taskachievement_service = TaskAchievementService()
+        coherence_service = CoherenceCohesionService()
         logger.info("All services initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize services: {e}")
@@ -131,18 +134,21 @@ async def submit_writing(
         grammar_analysis = grammar_service.analyze_grammar(submission.text)
         lexical_analysis = lexical_service.analyze_lexical(submission.text)
         task_analysis = taskachievement_service.analyze_submission(submission)
+        coherence_analysis = coherence_service.analyze_coherence_cohesion(submission.text)
         
         # Calculate IELTS scores (1-9 scale)
         weights = {
-            'grammar': 0.33,
-            'lexical': 0.33,
-            'task_achievement': 0.34
+            'grammar': 0.25,
+            'lexical': 0.25,
+            'task_achievement': 0.25,
+            'coherence': 0.25  # New weight for coherence
         }
 
         ielts_score = (
             grammar_analysis['overall_score'] * weights['grammar'] +
             lexical_analysis['overall_score'] * weights['lexical'] +
-            task_analysis['ielts_score'] * weights['task_achievement']
+            task_analysis['ielts_score'] * weights['task_achievement'] +
+            coherence_analysis['overall_score'] * weights['coherence']
         )
         
         # Round IELTS score to nearest 0.5
@@ -164,6 +170,9 @@ async def submit_writing(
         db_submission.task_achievement_score = task_analysis['ielts_score']
         db_submission.task_achievement_feedback = task_analysis['task_achievement_feedback']
         db_submission.task_achievement_analysis = task_analysis['task_achievement_analysis']
+        db_submission.coherence_score = coherence_analysis['overall_score']
+        db_submission.coherence_feedback = coherence_analysis['feedback']
+        db_submission.coherence_analysis = coherence_analysis
 
         # Save to DB
         db.add(db_submission)
@@ -175,6 +184,7 @@ async def submit_writing(
             **db_submission.__dict__,
             'grammar_analysis': grammar_analysis,
             'lexical_analysis': lexical_analysis,
+            'coherence_analysis': coherence_analysis,
             'task_achievement_analysis': task_analysis['task_achievement_analysis']
         }
 

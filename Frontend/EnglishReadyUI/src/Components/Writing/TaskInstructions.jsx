@@ -1,3 +1,6 @@
+const taskImage = new URL('../../assets/image.jpg', import.meta.url).href;
+
+console.log("Image path:", taskImage);
 const TaskInstructions = () => {
     return (
       <div className="bg-white border rounded-lg p-4 mb-6">
@@ -28,7 +31,7 @@ const TaskInstructions = () => {
           
           <div className="w-96 bg-gray-100 rounded-lg flex items-center justify-center">
             <img 
-              src="/api/placeholder/400/320"
+              src={taskImage}
               alt="Task Graph" 
               className="max-w-full h-auto rounded"
             />

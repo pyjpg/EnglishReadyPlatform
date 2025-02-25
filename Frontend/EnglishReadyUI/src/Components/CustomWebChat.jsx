@@ -13,7 +13,7 @@ function CustomWebChat({ directLine }) {
   const [grammarAnalysis, setGrammarAnalysis] = useState(null);
   const [lexicalAnalysis, setLexicalAnalysis] = useState(null);
   const [taskAchievementAnalysis, setTaskAchievementAnalysis] = useState(null);
-
+  const [coherenceAnalysis, setCoherenceAnalysis] = useState(null);
   useEffect(() => {
     const scrollToBottom = () => {
       if (transcriptRef.current) {
@@ -61,6 +61,7 @@ function CustomWebChat({ directLine }) {
     setGrammarAnalysis(null);
     setTaskAchievementAnalysis(null);
     setLexicalAnalysis(null); 
+    setCoherenceAnalysis(null);
     
     try {
       const response = await fetch('http://127.0.0.1:8000/api/submit-writing', {
@@ -90,6 +91,7 @@ function CustomWebChat({ directLine }) {
       setGrammarAnalysis(data.grammar_analysis);
       setLexicalAnalysis(data.lexical_analysis);
       setTaskAchievementAnalysis(data.task_achievement_analysis); // Fixed this line
+      setCoherenceAnalysis(data.coherence_analysis);
       setSubmissionStatus('success');
 
       if (directLine) {
@@ -118,6 +120,7 @@ function CustomWebChat({ directLine }) {
         setIsWritingMode={setIsWritingMode}
         grammarAnalysis={grammarAnalysis}
         lexicalAnalysis={lexicalAnalysis}
+        coherenceAnalysis={coherenceAnalysis}
         taskAchievementAnalysis={taskAchievementAnalysis} // Added this prop
       />
     );

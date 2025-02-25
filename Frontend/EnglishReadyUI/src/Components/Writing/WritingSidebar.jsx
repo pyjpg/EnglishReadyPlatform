@@ -14,7 +14,8 @@ const WritingSidebar = ({
   setIsWritingMode, 
   grammarAnalysis,
   lexicalAnalysis,
-  taskAchievementAnalysis 
+  taskAchievementAnalysis,
+  coherenceAnalysis
 }) => {
   // State for modal management
   const [activeModal, setActiveModal] = useState(null);
@@ -57,6 +58,12 @@ const WritingSidebar = ({
         text: lexicalAnalysis.feedback.improvements[0],
         priority: lexicalAnalysis.overall_score < 5 ? "medium" : "low"
       });
+      if (coherenceAnalysis?.improvements?.length > 0) {
+        improvements.push({
+          text: coherenceAnalysis.improvements[0],
+          priority: coherenceAnalysis.overall_score < 5 ? "medium" : "low"
+        });
+      }
     }
     
     return improvements;
@@ -104,6 +111,13 @@ const WritingSidebar = ({
                     label="Vocabulary" 
                     onClick={() => setActiveModal('vocabulary')}
                   />
+                <CompactScoreIndicator 
+                score={coherenceAnalysis?.overall_score || 0} 
+                maxScore={9}
+                label="Coherence" 
+                onClick={() => setActiveModal('coherence')}
+              />
+
                 </>
               )}
             </div>
@@ -167,6 +181,13 @@ const WritingSidebar = ({
               icon={FeedbackIcons.vocabulary}
               color="amber"
             />
+            <FeedbackSummaryCard
+        title="Coherence & Cohesion"
+        summary={`Score: ${coherenceAnalysis?.overall_score.toFixed(1)}/9. ${coherenceAnalysis?.feedback?.[0] || "Click for details."}.`}
+        onClick={() => setActiveModal('coherence')}
+        icon={FeedbackIcons.vocabulary}  // You'll need to add this to FeedbackIcons
+        color="purple"
+      />
           </>
         )}
         
@@ -219,6 +240,7 @@ const WritingSidebar = ({
         taskAchievementAnalysis={taskAchievementAnalysis}
         grammarAnalysis={grammarAnalysis}
         lexicalAnalysis={lexicalAnalysis}
+        coherenceAnalysis={coherenceAnalysis}
       />
     </>
   );
@@ -250,6 +272,11 @@ WritingSidebar.propTypes = {
       detailed_suggestions: PropTypes.object
     })
   }),
+  coherenceAnalysis: PropTypes.shape({
+    overall_score: PropTypes.number,
+    improvements: PropTypes.arrayOf(PropTypes.string),
+    feedback: PropTypes.string
+  }),
   taskAchievementAnalysis: PropTypes.shape({
     band_score: PropTypes.number,
     component_scores: PropTypes.object,
@@ -268,6 +295,11 @@ WritingSidebar.propTypes = {
       specific_suggestions: PropTypes.objectOf(
         PropTypes.arrayOf(PropTypes.string)
       )
+    }),
+    coherenceAnalysis: PropTypes.shape({
+      overall_score: PropTypes.number,
+      improvements: PropTypes.arrayOf(PropTypes.string),
+      feedback: PropTypes.string
     })
   })
 };

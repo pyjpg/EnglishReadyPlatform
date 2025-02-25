@@ -4,6 +4,7 @@ import FeedbackModal from './FeedbackModals';
 import TaskAchievementDetailsContent from './TaskAchievementDetailsContent';
 import GrammarDetailsContent from './GrammarDetailsContent';
 import VocabularyDetailsContent from './VocabularyDetailsContent';
+import CoherenceDetailsContent from './CoherenceDetailsContent';
 
 // Component to handle all feedback modals in one place
 const FeedbackModalsManager = ({ 
@@ -11,8 +12,10 @@ const FeedbackModalsManager = ({
   setActiveModal, 
   taskAchievementAnalysis, 
   grammarAnalysis, 
-  lexicalAnalysis 
+  lexicalAnalysis,
+  coherenceAnalysis
 }) => {
+  console.log("coherenceAnalysis", coherenceAnalysis);  
   return (
     <>
       {/* Task Achievement Modal */}
@@ -41,16 +44,25 @@ const FeedbackModalsManager = ({
       >
         <VocabularyDetailsContent lexicalAnalysis={lexicalAnalysis} />
       </FeedbackModal>
+      <FeedbackModal
+                isOpen={activeModal === 'coherence'}
+                onClose={() => setActiveModal(null)}
+                title="Coherence & Cohesion"
+            >
+                <CoherenceDetailsContent coherenceAnalysis={coherenceAnalysis} />
+            </FeedbackModal>
+
     </>
   );
 };
 
 FeedbackModalsManager.propTypes = {
-  activeModal: PropTypes.oneOf([null, 'task', 'grammar', 'vocabulary']),
+  activeModal: PropTypes.oneOf([null, 'task', 'grammar', 'vocabulary', 'coherence']),
   setActiveModal: PropTypes.func.isRequired,
   taskAchievementAnalysis: PropTypes.object,
   grammarAnalysis: PropTypes.object,
-  lexicalAnalysis: PropTypes.object
+  lexicalAnalysis: PropTypes.object,
+  coherenceAnalysis: PropTypes.object
 };
 
 export default FeedbackModalsManager;
