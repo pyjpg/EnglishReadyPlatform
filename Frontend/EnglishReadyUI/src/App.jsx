@@ -1,65 +1,93 @@
-import './App.css';
-import Header from "./Components/Header";
-import React from "react";
-import { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Route, Routes } from "react-router-dom";
 import { createDirectLine } from "botframework-webchat";
-import CustomWebChat from './Components/CustomWebChat';
+import CustomWebChat from "./Components/CustomWebChat";
+import WritingMode from "./Components/Writing/WritingMode";
 
 function App() {
   const [directLine, setDirectLine] = useState(null);
   const [loading, setLoading] = useState(true);
-  const directLineToken = "D1eVyRA3fjXlrPKuEIlpdwgrCXJamBHdsLD8IYwGthbqyxa37ZIUJQQJ99BAAC5T7U2AArohAAABAZBSgnJj.63s6iUcTCKuMr4YW81LfBVXPi6BFVQseCwFB7Z64n9dSbjo2P6lXJQQJ99BAAC5T7U2AArohAAABAZBSPPNx";
+  const [grade, setGrade] = useState(0);
+  const [submissionStatus, setSubmissionStatus] = useState("");
+  const [isWritingMode, setIsWritingMode] = useState(false);
+  const textAreaRef = useRef(null);
 
-  // Asynchronous effect to initialize Direct Line connection
+  // Simulated analysis data (replace with real logic)
+  const grammarAnalysis = {};
+  const lexicalAnalysis = {};
+  const taskAchievementAnalysis = {};
+  const coherenceAnalysis = {};
+  const apiKey = import.meta.env.VITE_API_KEY;
+  console.log(apiKey); // Your key will be available here
   useEffect(() => {
     const fetchDirectLine = async () => {
       try {
-        // Use the Direct Line v4 API to create a conversation
         const response = await fetch("https://directline.botframework.com/v3/directline/conversations", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${directLineToken}`,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
         });
 
         const data = await response.json();
         if (data.conversationId) {
-          // Create Direct Line connection with the v4 token
-          const dl = createDirectLine({ token: directLineToken });
+          const dl = createDirectLine({ token: apiKey });
           setDirectLine(dl);
         }
         setLoading(false);
       } catch (error) {
         console.error("Failed to initialize Direct Line:", error);
-        setLoading(false); // Ensure loading stops even on error
+        setLoading(false);
       }
     };
 
     fetchDirectLine();
-  }, [directLineToken]);
+  }, [apiKey]);
 
   return (
-     <React.Fragment>
-    <div className="flex flex-col h-screen bg-white">
-      {/* Header */}
-      <Header />
-
-      {/* Chat container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        
-        {loading ? (
-          <p>Loading Chat...</p>
-        ) : directLine ? (
-          <div style={{ height: "500px", width: "100%", border: "1px solid #ccc" }}>
-            <CustomWebChat directLine={directLine} />
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          <div className="flex flex-col h-screen bg-white">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {loading ? (
+                <p>Loading Chat...</p>
+              ) : directLine ? (
+                <div style={{ height: "500px", width: "100%", border: "1px solid #ccc" }}>
+                  <CustomWebChat directLine={directLine} />
+                </div>
+              ) : (
+                <p>Error loading chat.</p>
+              )}
+            </div>
           </div>
-        ) : (
-          <p>Error loading chat.</p>
-        )}
-      </div>
-      {/* Input area */}
-    </div></React.Fragment>
+        }
+      />
+      
+      <Route 
+        path="/writing" 
+        element={
+          <div className="flex flex-col h-screen bg-white">
+            {directLine && (
+              <WritingMode 
+                directLine={directLine}
+                textAreaRef={textAreaRef}
+                grade={grade}
+                submissionStatus={submissionStatus}
+                handleSubmit={(essay) => console.log("Submitted essay:", essay)}
+                setIsWritingMode={setIsWritingMode}
+                grammarAnalysis={grammarAnalysis}
+                lexicalAnalysis={lexicalAnalysis}
+                taskAchievementAnalysis={taskAchievementAnalysis}
+                coherenceAnalysis={coherenceAnalysis}
+              />
+            )}
+          </div>
+        }
+      />
+    </Routes>
   );
 }
 

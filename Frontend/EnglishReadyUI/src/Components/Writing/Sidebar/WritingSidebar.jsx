@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import CircularProgress from './CircularProgress';
-import FeedbackSummaryCard from './FeedbackSummary';
-import CompactScoreIndicator from './CompactScoreIndicator';
-import KeyImprovementItem from './KeyImprovementItem';
-import FeedbackModalsManager from './FeedbackModalManager';
-import FeedbackIcons from './FeedbackIcons';
+import FeedbackSummaryCard from '../Grading/FeedbackSummary';
+import CompactScoreIndicator from '../Grading/CompactScoreIndicator';
+import KeyImprovementItem from '../Grading/KeyImprovementItem';
+import FeedbackModalsManager from '../Grading/FeedbackModalManager';
+import FeedbackIcons from '../../Writing/Grading/FeedbackIcons';
 
 const WritingSidebar = ({ 
   grade, 

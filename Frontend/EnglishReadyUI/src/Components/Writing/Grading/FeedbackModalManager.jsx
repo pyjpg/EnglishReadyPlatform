@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import FeedbackModal from './FeedbackModals';
-import TaskAchievementDetailsContent from './TaskAchievementDetailsContent';
-import GrammarDetailsContent from './GrammarDetailsContent';
-import VocabularyDetailsContent from './VocabularyDetailsContent';
-import CoherenceDetailsContent from './CoherenceDetailsContent';
+import TaskAchievementDetailsContent from '../Grading/TaskAchievementDetailsContent';
+import GrammarDetailsContent from '../Grading/GrammarDetailsContent';
+import VocabularyDetailsContent from '../Grading/VocabularyDetailsContent';
+import CoherenceDetailsContent from '../Grading/CoherenceDetailsContent';
 
 // Component to handle all feedback modals in one place
 const FeedbackModalsManager = ({ 

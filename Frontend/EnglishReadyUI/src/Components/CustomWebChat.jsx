@@ -1,23 +1,31 @@
 import { useRef, useEffect, useState } from 'react';
 import { Components } from 'botframework-webchat';
+import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import WritingMode from './Writing/WritingMode'; 
 
 function CustomWebChat({ directLine }) {
+  const navigate = useNavigate();
   const chatContainerRef = useRef(null);
   const transcriptRef = useRef(null);
-  const textAreaRef = useRef(null);
-  const [isWritingMode, setIsWritingMode] = useState(false);
-  const [grade, setGrade] = useState(65);
-  const [submissionStatus, setSubmissionStatus] = useState(null);
-  const [grammarAnalysis, setGrammarAnalysis] = useState(null);
-  const [lexicalAnalysis, setLexicalAnalysis] = useState(null);
-  const [taskAchievementAnalysis, setTaskAchievementAnalysis] = useState(null);
-  const [coherenceAnalysis, setCoherenceAnalysis] = useState(null);
+  const [writingTaskData, setWritingTaskData] = useState(null);
+
+  // Mutation observer setup
   useEffect(() => {
     const scrollToBottom = () => {
       if (transcriptRef.current) {
         transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+      }
+    };
+
+    const handleBotMessage = (messageContent) => {
+      if (messageContent.includes('please write your introduction')) {
+        navigate('/writing', {
+          state: {
+            questionNumber: 3,
+            taskType: 'argument',
+            initialPrompt: messageContent
+          }
+        });
       }
     };
 
@@ -26,15 +34,11 @@ function CustomWebChat({ directLine }) {
         if (mutation.addedNodes.length > 0) {
           const addedNode = mutation.addedNodes[0];
           if (addedNode.tagName === 'ARTICLE') {
-            const messageContent = addedNode.innerText.replace('Bot said:', '').trim().toLowerCase();
-            console.log('Bot message:', messageContent);
-            
-            if (messageContent.includes('please write your introduction')) {
-              setIsWritingMode(true);
-              setTimeout(() => {
-                textAreaRef.current?.focus();
-              }, 100);
-            }
+            const messageContent = addedNode.innerText
+              .replace('Bot said:', '')
+              .trim()
+              .toLowerCase();
+            handleBotMessage(messageContent);
           }
           scrollToBottom();
         }
@@ -49,20 +53,9 @@ function CustomWebChat({ directLine }) {
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [navigate]);
 
-  const handleSubmit = async (text) => {
-    if (!text?.trim()) {
-      alert('Please write your response before submitting.');
-      return;
-    }
-
-    setSubmissionStatus(null);
-    setGrammarAnalysis(null);
-    setTaskAchievementAnalysis(null);
-    setLexicalAnalysis(null); 
-    setCoherenceAnalysis(null);
-    
+  const handleWritingSubmission = async (text) => {
     try {
       const response = await fetch('http://127.0.0.1:8000/api/submit-writing', {
         method: 'POST',
@@ -76,55 +69,27 @@ function CustomWebChat({ directLine }) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit writing');
-      }
-
-      const data = await response.json();
-      console.log('Response from backend:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      });
+      if (!response.ok) throw new Error('Failed to submit writing');
       
-      setGrade(data.grade || 75);
-      setGrammarAnalysis(data.grammar_analysis);
-      setLexicalAnalysis(data.lexical_analysis);
-      setTaskAchievementAnalysis(data.task_achievement_analysis); // Fixed this line
-      setCoherenceAnalysis(data.coherence_analysis);
-      setSubmissionStatus('success');
+      const data = await response.json();
+      setWritingTaskData(data);
 
       if (directLine) {
         await directLine.postActivity({
           type: 'message',
           from: { id: 'user', name: 'User' },
-          text: `Writing task submitted successfully. Grammar Score: ${data.grammar_analysis?.overall_score.toFixed(1)}/9.0`,
+          text: `Writing submitted - Grammar: ${data.grammar_analysis?.overall_score.toFixed(1)}/9.0`,
           timestamp: new Date().toISOString()
         });
       }
 
+      navigate(-1); // Return to chat after submission
+
     } catch (error) {
-      console.error('Error submitting writing:', error);
-      setSubmissionStatus('error');
-      alert('There was an error submitting your writing. Please try again.');
+      console.error('Submission error:', error);
+      alert('Error submitting writing. Please try again.');
     }
   };
-
-  if (isWritingMode) {
-    return (
-      <WritingMode
-        textAreaRef={textAreaRef}
-        grade={grade}
-        submissionStatus={submissionStatus}
-        handleSubmit={handleSubmit}
-        setIsWritingMode={setIsWritingMode}
-        grammarAnalysis={grammarAnalysis}
-        lexicalAnalysis={lexicalAnalysis}
-        coherenceAnalysis={coherenceAnalysis}
-        taskAchievementAnalysis={taskAchievementAnalysis} // Added this prop
-      />
-    );
-  }
 
   return (
     <div ref={chatContainerRef} className="fixed inset-0 flex flex-col bg-gray-100">
@@ -149,7 +114,6 @@ function CustomWebChat({ directLine }) {
             <div className="flex items-center gap-1 bg-gray-100 rounded-full px-4 py-2">
               <Components.BasicSendBox 
                 className="w-full bg-transparent outline-none"
-                disabled={isWritingMode}
               />
             </div>
           </div>
