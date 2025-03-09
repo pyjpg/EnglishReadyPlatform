@@ -3,3 +3,4 @@
 *.db
 /ML-Models/app/services/__pycache__
 Frontend/EnglishReadyUI/.env
+*.db
