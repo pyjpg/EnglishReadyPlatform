@@ -8,6 +8,7 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [text, setText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const minWords = 150;
 
   // Update character and word count
@@ -16,21 +17,24 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
     setText(newText);
     setCharacterCount(newText.length);
     setWordCount(newText.trim() === '' ? 0 : newText.trim().split(/\s+/).length);
-    
-    // Auto-save indication (simulated)
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 1000);
   };
-
-  // Simulated initial loading state
   useEffect(() => {
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 800);
   }, []);
 
   const handleSubmit = () => {
+    
+    
+    setIsSubmitting(true);
     if (onSubmit) {
-      onSubmit(text);
+      onSubmit(text)  
+        .catch(error => {
+          console.error('Error submitting writing:', error);
+        })
+        .finally(() => setIsSubmitting(false));
     }
   };
 
@@ -67,6 +71,7 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
               onFocus={() => setFocusMode(true)}
               onBlur={() => setFocusMode(false)}
               autoFocus
+              disabled={isSubmitting}
             />
 
             {/* Position indicators at the bottom with z-index to prevent overlap */}
@@ -80,7 +85,7 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
             </div>
 
             <div className="absolute bottom-2 right-3 flex items-center space-x-4 text-sm text-gray-500 z-10">
-              {isSaving && (
+              {isSaving && !isSubmitting && (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -96,10 +101,30 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
         )}
       </div>
       
-
-      
+      {/* Submit Button Section */}
+      <div className="mt-4 flex justify-end">
+      <button
+        onClick={handleSubmit}
+        disabled={wordCount < minWords || isLoading || isSubmitting}
+        className={`px-4 py-2 rounded-md font-medium transition-colors ${wordCount < minWords || isLoading || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+      >
+        {isSubmitting ? (
+          <span className="flex items-center">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Submitting...
+          </span>
+        ) : wordCount < minWords ? (
+          `Need ${minWords - wordCount} more words`
+        ) : (
+          'Submit Essay'
+        )}
+      </button>
     </div>
-  );
+    </div>
+  );  
 };
 
 WritingArea.propTypes = {

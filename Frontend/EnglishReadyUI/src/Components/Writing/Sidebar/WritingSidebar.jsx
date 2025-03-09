@@ -5,303 +5,207 @@ import FeedbackSummaryCard from '../Grading/FeedbackSummary';
 import CompactScoreIndicator from '../Grading/CompactScoreIndicator';
 import KeyImprovementItem from '../Grading/KeyImprovementItem';
 import FeedbackModalsManager from '../Grading/FeedbackModalManager';
-import FeedbackIcons from '../../Writing/Grading/FeedbackIcons';
 
-const WritingSidebar = ({ 
-  grade, 
-  submissionStatus, 
-  handleSubmit, 
-  setIsWritingMode, 
-  grammarAnalysis,
-  lexicalAnalysis,
-  taskAchievementAnalysis,
-  coherenceAnalysis
+const WritingSidebar = ({
+  submissionStatus,
+  feedbackData,
+  isSubmitting,
+  onSubmit,
+  onExit,
+  
 }) => {
-  // State for modal management
   const [activeModal, setActiveModal] = useState(null);
   
-  // Questions for the progress section
-  const questions = [1, 2, 3, 4, 5, 6];
-  
-  // Helper to get key improvements across all areas
+  // Destructure API response with safe defaults
+  const {
+    grade = 0,
+    grammar_analysis: grammarAnalysis = {},
+    lexical_analysis: lexicalAnalysis = {},
+    task_achievement_analysis: taskAnalysis = {},
+    coherence_analysis: coherenceAnalysis = {}
+  } = feedbackData || {};
+
+  // Get priority improvements from all categories
   const getKeyImprovements = () => {
     const improvements = [];
     
-    // Word count improvement (highest priority if below requirement)
-    if (taskAchievementAnalysis?.detailed_analysis?.word_count_analysis?.meets_requirement === false) {
-      improvements.push({
-        text: `Add ${Math.abs(taskAchievementAnalysis.detailed_analysis.word_count_analysis.difference)} more words to meet the minimum requirement`,
-        priority: "high"
-      });
+    // Task Achievement improvements
+    if (taskAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...taskAnalysis.feedback.improvements);
     }
     
-    // Add one task achievement improvement
-    if (taskAchievementAnalysis?.feedback?.improvements?.length > 0) {
-      improvements.push({
-        text: taskAchievementAnalysis.feedback.improvements[0],
-        priority: "medium"
-      });
-    }
-    
-    // Add one grammar improvement
+    // Grammar improvements
     if (grammarAnalysis?.feedback) {
-      const grammarSuggestion = grammarAnalysis.feedback.split('.')[0] + '.';
-      improvements.push({
-        text: grammarSuggestion,
-        priority: grammarAnalysis.overall_score < 5 ? "medium" : "low"
-      });
+      improvements.push(grammarAnalysis.feedback);
     }
     
-    // Add one vocabulary improvement
-    if (lexicalAnalysis?.feedback?.improvements?.length > 0) {
-      improvements.push({
-        text: lexicalAnalysis.feedback.improvements[0],
-        priority: lexicalAnalysis.overall_score < 5 ? "medium" : "low"
-      });
-      if (coherenceAnalysis?.improvements?.length > 0) {
-        improvements.push({
-          text: coherenceAnalysis.improvements[0],
-          priority: coherenceAnalysis.overall_score < 5 ? "medium" : "low"
-        });
-      }
+    // Vocabulary improvements
+    if (lexicalAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...lexicalAnalysis.feedback.improvements);
     }
     
-    return improvements;
-  };
-  
-  // For readability - destructure nested objects
-  const wordCount = taskAchievementAnalysis?.detailed_analysis?.word_count_analysis?.word_count || 0;
-  const wordCountDifference = taskAchievementAnalysis?.detailed_analysis?.word_count_analysis?.difference || 0;
-  const meetsWordRequirement = taskAchievementAnalysis?.detailed_analysis?.word_count_analysis?.meets_requirement || false;
-  
-  // Add the modals manager
-  return (
-    <>
-      <div className="w-72 border-l bg-gray-50 p-4 flex flex-col h-full overflow-y-auto">
-        {/* Score Overview */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-medium text-gray-800">Current Grade</h3>
-            <div className="text-sm font-medium text-gray-600">IELTS Writing</div>
-          </div>
-          
-          <div className="flex items-center mb-4">
-            <div className="relative mr-4">
-              <CircularProgress percentage={grade} />
-            </div>
-            
-            <div className="space-y-2 flex-1">
-              {submissionStatus === 'success' && (
-                <>
-                  <CompactScoreIndicator 
-                    score={taskAchievementAnalysis?.band_score || 0} 
-                    maxScore={9}
-                    label="Task Achievement" 
-                    onClick={() => setActiveModal('task')}
-                  />
-                  <CompactScoreIndicator 
-                    score={grammarAnalysis?.overall_score || 0} 
-                    maxScore={9}
-                    label="Grammar" 
-                    onClick={() => setActiveModal('grammar')}
-                  />
-                  <CompactScoreIndicator 
-                    score={lexicalAnalysis?.overall_score || 0} 
-                    maxScore={9}
-                    label="Vocabulary" 
-                    onClick={() => setActiveModal('vocabulary')}
-                  />
-                <CompactScoreIndicator 
-                score={coherenceAnalysis?.overall_score || 0} 
-                maxScore={9}
-                label="Coherence" 
-                onClick={() => setActiveModal('coherence')}
-              />
+    // Coherence improvements
+    if (coherenceAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...coherenceAnalysis.feedback.improvements);
+    }
 
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+    return improvements.slice(0, 3).map(text => ({
+      text,
+      priority: determinePriority(text)
+    }));
+  };
+
+  // Determine priority based on content
+  const determinePriority = (text) => {
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('add') || lowerText.includes('high')) return 'high';
+    if (lowerText.includes('medium')) return 'medium';
+    return 'low';
+  };
+  // In WritingSidebar
+console.log('Feedback Data:', feedbackData);
+console.log('Submission Status:', submissionStatus);
+
+  return (
+    <div className="w-72 border-l bg-gray-50 p-4 flex flex-col h-full overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
+        <h3 className="text-base font-medium text-gray-800">Current Grade</h3>
+        <CircularProgress percentage={grade} />
         
-        {submissionStatus === 'success' && (
+        {submissionStatus === 'graded' && (
           <>
-            {/* Word Count Summary */}
-            <div className="bg-white rounded-lg p-3 mb-5 border border-gray-200">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  {FeedbackIcons.wordCount}
-                  <h3 className="text-sm font-medium text-gray-700 ml-2">Word Count</h3>
-                </div>
-                <span className="font-medium text-sm">{wordCount}</span>
-              </div>
-              {!meetsWordRequirement && (
-                <div className="mt-1 text-sm text-red-600 flex items-center">
-                  {FeedbackIcons.warning}
-                  <span className="ml-1">Needs {Math.abs(wordCountDifference)} more words</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Key Improvements Section */}
-            <div className="mb-5">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Key Improvements</h3>
-              {getKeyImprovements().map((improvement, index) => (
-                <KeyImprovementItem 
-                  key={index} 
-                  text={improvement.text} 
-                  priority={improvement.priority} 
-                />
-              ))}
-            </div>
-            
-            {/* Area Summaries */}
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Assessment Areas</h3>
-            
-            <FeedbackSummaryCard
-              title="Task Achievement"
-              summary={`Score: ${taskAchievementAnalysis?.band_score.toFixed(1)}/9. ${taskAchievementAnalysis?.feedback?.improvements?.[0] || "Click for details."}`}
+            <CompactScoreIndicator 
+              score={taskAnalysis?.band_score || 0}
+              maxScore={9}
+              label="Task Achievement"
               onClick={() => setActiveModal('task')}
-              icon={FeedbackIcons.task}
-              color="blue"
+              tooltip="Measures how well you addressed the task requirements"
             />
-            
-            <FeedbackSummaryCard
-              title="Grammar & Sentence Structure"
-              summary={`Score: ${grammarAnalysis?.overall_score.toFixed(1)}/9. ${grammarAnalysis?.feedback?.split('.')[0] || "Click for details."}.`}
+            <CompactScoreIndicator
+              score={grammarAnalysis?.overall_score || 0}
+              maxScore={9}
+              label="Grammar"
               onClick={() => setActiveModal('grammar')}
-              icon={FeedbackIcons.grammar}
-              color="green"
+              tooltip="Evaluates grammatical accuracy and sentence structures"
             />
-            
-            <FeedbackSummaryCard
-              title="Vocabulary & Word Choice"
-              summary={`Score: ${lexicalAnalysis?.overall_score.toFixed(1)}/9. ${lexicalAnalysis?.feedback?.improvements?.[0] || "Click for details."}`}
+            <CompactScoreIndicator
+              score={lexicalAnalysis?.overall_score || 0}
+              maxScore={9}
+              label="Vocabulary"
               onClick={() => setActiveModal('vocabulary')}
-              icon={FeedbackIcons.vocabulary}
-              color="amber"
+              tooltip="Assesses range and appropriateness of vocabulary"
             />
-            <FeedbackSummaryCard
-        title="Coherence & Cohesion"
-        summary={`Score: ${coherenceAnalysis?.overall_score.toFixed(1)}/9. ${coherenceAnalysis?.feedback?.[0] || "Click for details."}.`}
-        onClick={() => setActiveModal('coherence')}
-        icon={FeedbackIcons.vocabulary}  // You'll need to add this to FeedbackIcons
-        color="purple"
-      />
+            <CompactScoreIndicator
+              score={coherenceAnalysis?.overall_score || 0}
+              maxScore={9}
+              label="Coherence"
+              onClick={() => setActiveModal('coherence')}
+              tooltip="Measures logical flow and organization of ideas"
+            />
           </>
         )}
-        
-        {/* Progress Section */}
-        <div className="mt-4 mb-8">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Progress</h3>
-          <div className="flex flex-col gap-2">
-            {questions.map((step, index) => (
-              <div key={step} className="flex items-center gap-3">
-                <div
-                  className={`w-4 h-4 rounded-full ${
-                    index < 3 ? 'bg-purple-500' : 'bg-gray-300'
-                  }`}
-                />
-                <span className="text-sm text-gray-600">Question {step}</span>
-              </div>
+      </div>
+
+     
+        <>
+          <div className="mb-5">
+            <h3 className="text-sm font-medium text-gray-700">Key Improvements</h3>
+            {getKeyImprovements().map((item, index) => (
+              <KeyImprovementItem 
+                key={`improvement-${index}`} 
+                text={item.text} 
+                priority={item.priority} 
+              />
             ))}
           </div>
-        </div>
-        
-        {/* Action Buttons */}
-        <div className="mt-auto pt-4">
-          <div className="space-y-2">
-            {submissionStatus === 'success' && (
-              <div className="text-sm text-green-600 text-center mb-2">
-                Submission successful! You can continue editing if needed.
-              </div>
-            )}
-            <button
-              onClick={handleSubmit}
-              className={`w-full px-6 py-2 text-white rounded-lg transition-all duration-300 
-                ${submissionStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-            >
-              {submissionStatus === 'success' ? 'Update Submission' : 'Submit'}
-            </button>
-          </div>
-          <button
-            onClick={() => setIsWritingMode(false)}
-            className="w-full px-4 py-2 mt-2 text-gray-600 hover:text-gray-800"
-          >
-            Cancel
-          </button>
-        </div>
+          
+          <FeedbackSummaryCard
+            title="Task Achievement"
+            summary={taskAnalysis?.feedback?.strengths?.[0] || 'No specific feedback available'}
+            onClick={() => setActiveModal('task')}
+            color="blue"
+          />
+          <FeedbackSummaryCard
+            title="Grammar"
+            summary={grammarAnalysis?.feedback || 'No specific feedback available'}
+            onClick={() => setActiveModal('grammar')}
+            color="green"
+          />
+          <FeedbackSummaryCard
+            title="Vocabulary"
+            summary={lexicalAnalysis?.feedback?.improvements?.[0] || 'No specific feedback available'}
+            onClick={() => setActiveModal('vocabulary')}
+            color="amber"
+          />
+          <FeedbackSummaryCard
+            title="Coherence"
+            summary={coherenceAnalysis?.feedback?.improvements?.[0] || 'No specific feedback available'}
+            onClick={() => setActiveModal('coherence')}
+            color="purple"
+          />
+        </>
+
+      <div className="mt-auto space-y-2">
+        <button
+          onClick={onSubmit}
+          disabled={isSubmitting}
+          className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Essay'}
+        </button>
+        <button
+          onClick={onExit}
+          className="w-full px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Exit Writing Mode
+        </button>
       </div>
-      
-      {/* Add modals manager to handle detailed feedback popups */}
+
       <FeedbackModalsManager
         activeModal={activeModal}
         setActiveModal={setActiveModal}
-        taskAchievementAnalysis={taskAchievementAnalysis}
+        taskAnalysis={taskAnalysis}
         grammarAnalysis={grammarAnalysis}
         lexicalAnalysis={lexicalAnalysis}
         coherenceAnalysis={coherenceAnalysis}
       />
-    </>
+    </div>
   );
 };
 
 WritingSidebar.propTypes = {
-  grade: PropTypes.number.isRequired,
-  submissionStatus: PropTypes.string,
-  handleSubmit: PropTypes.func.isRequired,
-  setIsWritingMode: PropTypes.func.isRequired,
-  grammarAnalysis: PropTypes.shape({
-    overall_score: PropTypes.number,
-    raw_score: PropTypes.number,
-    sentence_analysis: PropTypes.arrayOf(
-      PropTypes.shape({
-        sentence: PropTypes.string,
-        score: PropTypes.number
-      })
-    ),
-    feedback: PropTypes.string
-  }),
-  lexicalAnalysis: PropTypes.shape({
-    overall_score: PropTypes.number,
-    component_scores: PropTypes.object,
-    feedback: PropTypes.shape({
-      general_feedback: PropTypes.arrayOf(PropTypes.string),
-      strengths: PropTypes.arrayOf(PropTypes.string),
-      improvements: PropTypes.arrayOf(PropTypes.string),
-      detailed_suggestions: PropTypes.object
-    })
-  }),
-  coherenceAnalysis: PropTypes.shape({
-    overall_score: PropTypes.number,
-    improvements: PropTypes.arrayOf(PropTypes.string),
-    feedback: PropTypes.string
-  }),
-  taskAchievementAnalysis: PropTypes.shape({
-    band_score: PropTypes.number,
-    component_scores: PropTypes.object,
-    detailed_analysis: PropTypes.shape({
-      word_count_analysis: PropTypes.shape({
-        word_count: PropTypes.number,
-        meets_requirement: PropTypes.bool,
-        difference: PropTypes.number
-      }),
-      structure_analysis: PropTypes.object,
-      content_analysis: PropTypes.object
-    }),
-    feedback: PropTypes.shape({
-      strengths: PropTypes.arrayOf(PropTypes.string),
-      improvements: PropTypes.arrayOf(PropTypes.string),
-      specific_suggestions: PropTypes.objectOf(
-        PropTypes.arrayOf(PropTypes.string)
-      )
-    }),
-    coherenceAnalysis: PropTypes.shape({
+  submissionStatus: PropTypes.oneOf(['idle', 'graded', 'error']),
+  feedbackData: PropTypes.shape({
+    grade: PropTypes.number,
+    grammar_analysis: PropTypes.shape({
       overall_score: PropTypes.number,
-      improvements: PropTypes.arrayOf(PropTypes.string),
-      feedback: PropTypes.string
-    })
-  })
+      feedback: PropTypes.string,
+      sentence_analysis: PropTypes.array,
+    }),
+    lexical_analysis: PropTypes.shape({
+      overall_score: PropTypes.number,
+      feedback: PropTypes.shape({
+        improvements: PropTypes.arrayOf(PropTypes.string),
+      }),
+    }),
+    task_achievement_analysis: PropTypes.shape({
+      band_score: PropTypes.number,
+      feedback: PropTypes.shape({
+        strengths: PropTypes.arrayOf(PropTypes.string),
+        improvements: PropTypes.arrayOf(PropTypes.string),
+      }),
+    }),
+    coherence_analysis: PropTypes.shape({
+      overall_score: PropTypes.number,
+      feedback: PropTypes.shape({
+        improvements: PropTypes.arrayOf(PropTypes.string),
+      }),
+    }),
+  }),
+  isSubmitting: PropTypes.bool.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onExit: PropTypes.func.isRequired,
+  currentText: PropTypes.string.isRequired,
 };
 
 export default WritingSidebar;

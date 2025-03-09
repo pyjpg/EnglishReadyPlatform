@@ -55,42 +55,7 @@ function CustomWebChat({ directLine }) {
     return () => observer.disconnect();
   }, [navigate]);
 
-  const handleWritingSubmission = async (text) => {
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/submit-writing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          task_type: 'argument',
-          question_number: 3
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to submit writing');
-      
-      const data = await response.json();
-      setWritingTaskData(data);
-
-      if (directLine) {
-        await directLine.postActivity({
-          type: 'message',
-          from: { id: 'user', name: 'User' },
-          text: `Writing submitted - Grammar: ${data.grammar_analysis?.overall_score.toFixed(1)}/9.0`,
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      navigate(-1); // Return to chat after submission
-
-    } catch (error) {
-      console.error('Submission error:', error);
-      alert('Error submitting writing. Please try again.');
-    }
-  };
-
+ 
   return (
     <div ref={chatContainerRef} className="fixed inset-0 flex flex-col bg-gray-100">
       <Components.Composer directLine={directLine}>

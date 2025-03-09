@@ -6,14 +6,11 @@ import WritingArea from './WritingArea/WritingArea';
 
 const WritingMode = ({ 
   textAreaRef, 
-  grade, 
-  submissionStatus, 
-  handleSubmit, 
+
+
+ 
   setIsWritingMode,
-  grammarAnalysis,
-  lexicalAnalysis,
-  taskAchievementAnalysis,
-  coherenceAnalysis,
+ 
 }) => {
   // Available sections
   const sections = [
@@ -30,11 +27,7 @@ const WritingMode = ({
     analysis: '',
     conclusion: ''
   });
-  const handleSubmitWithSave = () => {
-    saveCurrentContent();
-    const fullEssay = Object.values(sectionContent).join('\n\n');
-    handleSubmit(fullEssay);
-  };
+ 
   
   // Auto-save timer
   const [lastSaved, setLastSaved] = useState(null);
@@ -72,6 +65,37 @@ const WritingMode = ({
     analysis: "In your analysis, mention specific numbers from the table and compare different nationalities.",
     conclusion: "Your conclusion should summarize the main trends without introducing new information."
   };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+const [writingTaskData, setWritingTaskData] = useState(null);
+
+const handleWritingSubmission = async () => {
+  setIsSubmitting(true);
+  try {
+    const fullEssay = Object.values(sectionContent).join('\n\n');
+    const response = await fetch('http://127.0.0.1:8000/api/submit-writing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: fullEssay,
+        task_type: 'argument',
+        question_number: 3
+      }),
+    });
+
+    if (!response.ok) throw new Error('Submission failed');
+    
+    const data = await response.json();
+    setWritingTaskData(data);
+
+  } catch (error) {
+    console.error('Submission error:', error);
+    
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   // Handle section change via dropdown
   const handleSectionChange = (e) => {
@@ -231,7 +255,7 @@ const WritingMode = ({
             placeholder={sectionPlaceholders[selectedSection]}
             section={selectedSection}
             initialContent={sectionContent[selectedSection]}
-            onSubmit={handleSubmitWithSave}
+            onSubmit={handleWritingSubmission}
           />
         </div>
         
@@ -250,7 +274,8 @@ const WritingMode = ({
          {totalWordCount}/150 words
        </div>
        <button
-         onClick={handleSubmitWithSave}
+         onClick={handleWritingSubmission}
+
          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
        >
          Submit
@@ -279,22 +304,16 @@ const WritingMode = ({
 
       {/* Right Sidebar - Only shown when NOT in focus mode */}
       {!focusMode && (
-        <WritingSidebar
-          grade={grade}
-          submissionStatus={submissionStatus}
-          handleSubmit={handleSubmitWithSave}
-          setIsWritingMode={setIsWritingMode}
-          grammarAnalysis={grammarAnalysis}
-          lexicalAnalysis={lexicalAnalysis}
-          taskAchievementAnalysis={taskAchievementAnalysis}
-          coherenceAnalysis={coherenceAnalysis}
-          sectionProgress={{
-            introduction: sectionContent.introduction.length > 0,
-            analysis: sectionContent.analysis.length > 0,
-            conclusion: sectionContent.conclusion.length > 0
-          }}
-        />
-      )}
+  <WritingSidebar
+   
+    feedbackData={writingTaskData}
+    isSubmitting={isSubmitting}
+    onSubmit={handleWritingSubmission}
+    onExit={() => setIsWritingMode(false)}
+    currentText={Object.values(sectionContent).join('\n\n')}
+  />
+)}
+     
     </div>
   );
 };
@@ -302,7 +321,6 @@ const WritingMode = ({
 WritingMode.propTypes = {
   textAreaRef: PropTypes.object.isRequired,
   grade: PropTypes.number.isRequired,
-  submissionStatus: PropTypes.string,
   handleSubmit: PropTypes.func.isRequired,
   setIsWritingMode: PropTypes.func.isRequired,
   grammarAnalysis: PropTypes.object,

@@ -6,52 +6,67 @@ import GrammarDetailsContent from '../Grading/GrammarDetailsContent';
 import VocabularyDetailsContent from '../Grading/VocabularyDetailsContent';
 import CoherenceDetailsContent from '../Grading/CoherenceDetailsContent';
 
-// Component to handle all feedback modals in one place
 const FeedbackModalsManager = ({ 
   activeModal, 
   setActiveModal, 
-  taskAchievementAnalysis, 
+  taskAnalysis, 
   grammarAnalysis, 
   lexicalAnalysis,
   coherenceAnalysis
 }) => {
-  console.log("coherenceAnalysis", coherenceAnalysis);  
   return (
     <>
-      {/* Task Achievement Modal */}
       <FeedbackModal
         isOpen={activeModal === 'task'}
         onClose={() => setActiveModal(null)}
         title="Task Achievement Details"
       >
-        <TaskAchievementDetailsContent taskAchievementAnalysis={taskAchievementAnalysis} />
+        <TaskAchievementDetailsContent 
+          bandScore={taskAnalysis?.band_score}
+          feedback={taskAnalysis?.feedback}
+          wordCountAnalysis={taskAnalysis?.detailed_analysis?.word_count_analysis}
+          structureAnalysis={taskAnalysis?.detailed_analysis?.structure_analysis}
+        />
       </FeedbackModal>
-      
-      {/* Grammar Modal */}
+
       <FeedbackModal
         isOpen={activeModal === 'grammar'}
         onClose={() => setActiveModal(null)}
         title="Grammar & Sentence Structure"
       >
-        <GrammarDetailsContent grammarAnalysis={grammarAnalysis} />
+        <GrammarDetailsContent 
+          overallScore={grammarAnalysis?.overall_score}
+          feedback={grammarAnalysis?.feedback}
+          sentenceAnalysis={grammarAnalysis?.sentence_analysis}
+          rawScore={grammarAnalysis?.raw_score}
+        />
       </FeedbackModal>
-      
-      {/* Vocabulary Modal */}
+
       <FeedbackModal
         isOpen={activeModal === 'vocabulary'}
         onClose={() => setActiveModal(null)}
         title="Vocabulary & Word Choice"
       >
-        <VocabularyDetailsContent lexicalAnalysis={lexicalAnalysis} />
+        <VocabularyDetailsContent
+          overallScore={lexicalAnalysis?.overall_score}
+          feedback={lexicalAnalysis?.feedback}
+          componentScores={lexicalAnalysis?.component_scores}
+          detailedSuggestions={lexicalAnalysis?.detailed_suggestions}
+        />
       </FeedbackModal>
-      <FeedbackModal
-                isOpen={activeModal === 'coherence'}
-                onClose={() => setActiveModal(null)}
-                title="Coherence & Cohesion"
-            >
-                <CoherenceDetailsContent coherenceAnalysis={coherenceAnalysis} />
-            </FeedbackModal>
 
+      <FeedbackModal
+        isOpen={activeModal === 'coherence'}
+        onClose={() => setActiveModal(null)}
+        title="Coherence & Cohesion"
+      >
+        <CoherenceDetailsContent 
+          overallScore={coherenceAnalysis?.overall_score}
+          feedback={coherenceAnalysis?.feedback}
+          componentScores={coherenceAnalysis?.component_scores}
+          paragraphAnalysis={coherenceAnalysis?.detailed_analysis?.paragraph_structure}
+        />
+      </FeedbackModal>
     </>
   );
 };
@@ -59,10 +74,34 @@ const FeedbackModalsManager = ({
 FeedbackModalsManager.propTypes = {
   activeModal: PropTypes.oneOf([null, 'task', 'grammar', 'vocabulary', 'coherence']),
   setActiveModal: PropTypes.func.isRequired,
-  taskAchievementAnalysis: PropTypes.object,
-  grammarAnalysis: PropTypes.object,
-  lexicalAnalysis: PropTypes.object,
-  coherenceAnalysis: PropTypes.object
+  taskAnalysis: PropTypes.shape({
+    band_score: PropTypes.number,
+    feedback: PropTypes.object,
+    detailed_analysis: PropTypes.shape({
+      word_count_analysis: PropTypes.object,
+      structure_analysis: PropTypes.object
+    })
+  }),
+  grammarAnalysis: PropTypes.shape({
+    overall_score: PropTypes.number,
+    feedback: PropTypes.string,
+    sentence_analysis: PropTypes.array,
+    raw_score: PropTypes.number
+  }),
+  lexicalAnalysis: PropTypes.shape({
+    overall_score: PropTypes.number,
+    feedback: PropTypes.object,
+    component_scores: PropTypes.object,
+    detailed_suggestions: PropTypes.object
+  }),
+  coherenceAnalysis: PropTypes.shape({
+    overall_score: PropTypes.number,
+    feedback: PropTypes.object,
+    component_scores: PropTypes.object,
+    detailed_analysis: PropTypes.shape({
+      paragraph_structure: PropTypes.object
+    })
+  })
 };
 
 export default FeedbackModalsManager;

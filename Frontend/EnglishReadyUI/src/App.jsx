@@ -18,7 +18,7 @@ function App() {
   const taskAchievementAnalysis = {};
   const coherenceAnalysis = {};
   const apiKey = import.meta.env.VITE_API_KEY;
-  console.log(apiKey); // Your key will be available here
+
   useEffect(() => {
     const fetchDirectLine = async () => {
       try {
