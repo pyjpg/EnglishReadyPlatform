@@ -14,12 +14,12 @@ Real-time feedback on IELTS writing tasks using advanced machine learning models
 - Focus Mode
 
 <div align="center">
-  <img src="./images/User-Writing.png" alt="UserWriting" width="800"/>
+  <img src="./images/UserWriting.png" alt="UserWriting" width="800"/>
   <p><em>Isolated Low-Stress Interaction Environments</em></p>
 </div>
 
 <div align="center">
-  <img src="./images/User-Feedback.png" alt="User Feedback" width="800"/>
+  <img src="./images/UserFeedback.png" alt="User Feedback" width="800"/>
   <p><em>Detailed vocabulary assessment with component scores</em></p>
 </div>
 <div align="center">
