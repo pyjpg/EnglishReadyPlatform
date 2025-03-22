@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import LexicalFeedback from './LexicalFeedback';
 
+
 const VocabularyDetailsContent = ({ lexicalAnalysis }) => {
   if (!lexicalAnalysis) return null;
   
