@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import WritingSidebar from './Sidebar/WritingSidebar';
 import TaskInstructions from './Question/TaskInstructions';
 import WritingArea from './WritingArea/WritingArea';
+import FeedbackModalsManager from './Grading/FeedbackModalManager';
 
 const WritingMode = ({ 
   textAreaRef, 
@@ -304,14 +305,22 @@ const handleWritingSubmission = async () => {
 
       {/* Right Sidebar - Only shown when NOT in focus mode */}
       {!focusMode && (
-  <WritingSidebar
+  <div>
+    <WritingSidebar
    
-    feedbackData={writingTaskData}
-    isSubmitting={isSubmitting}
-    onSubmit={handleWritingSubmission}
-    onExit={() => setIsWritingMode(false)}
-    currentText={Object.values(sectionContent).join('\n\n')}
-  />
+   feedbackData={writingTaskData}
+   isSubmitting={isSubmitting}
+   onSubmit={handleWritingSubmission}
+   onExit={() => setIsWritingMode(false)}
+   currentText={Object.values(sectionContent).join('\n\n')}
+ />
+    <FeedbackModalsManager
+ 
+  feedbackData={writingTaskData} // Passing directly to modal manager
+/>
+  </div>
+  
+  
 )}
      
     </div>

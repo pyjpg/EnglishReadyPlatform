@@ -23,6 +23,7 @@ const WritingSidebar = ({
   // Destructure API response with safe defaults
   const {
     grade = 0,
+    ielts_score = 0, // Extract IELTS score from feedback data
     grammar_analysis: grammarAnalysis = {},
     lexical_analysis: lexicalAnalysis = {},
     task_achievement_analysis: taskAnalysis = {},
@@ -40,12 +41,15 @@ const WritingSidebar = ({
     
     // Grammar improvements
     if (grammarAnalysis?.feedback) {
+      
       const grammarFeedback = typeof grammarAnalysis.feedback === 'string' 
         ? grammarAnalysis.feedback 
         : '';
       if (grammarFeedback) {
         improvements.push(grammarFeedback);
       }
+      console.log(grammarFeedback);
+      console.log("oioiooaiaia");
     }
     
     // Vocabulary improvements
@@ -104,7 +108,7 @@ const WritingSidebar = ({
       </div>
     );
   };
-
+  console.log(grammarAnalysis);
   // Generate vocabulary/word choice analysis
   const renderVocabularyAnalysis = () => {
     if (!lexicalAnalysis || !lexicalAnalysis.overall_score) return null;
@@ -322,9 +326,7 @@ const WritingSidebar = ({
         activeModal={activeModal}
         setActiveModal={setActiveModal}
         taskAnalysis={taskAnalysis}
-        grammarAnalysis={grammarAnalysis}
-        lexicalAnalysis={lexicalAnalysis}
-        coherenceAnalysis={coherenceAnalysis}
+        feedbackData={feedbackData} // Pass the IELTS score to the modal manager
       />
     </div>
   );
@@ -333,6 +335,7 @@ const WritingSidebar = ({
 WritingSidebar.propTypes = {
   feedbackData: PropTypes.shape({
     grade: PropTypes.number,
+    ielts_score: PropTypes.number, // Add PropType for IELTS score
     grammar_analysis: PropTypes.shape({
       overall_score: PropTypes.number,
       feedback: PropTypes.oneOfType([
