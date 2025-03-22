@@ -3,9 +3,11 @@ import PropTypes from 'prop-types';
 import LexicalFeedback from './LexicalFeedback';
 
 
-const VocabularyDetailsContent = ({ lexicalAnalysis }) => {
-  if (!lexicalAnalysis) return null;
+const VocabularyDetailsContent = ({ lexicalAnalysis, ieltsScore }) => {
   
+  console.log(lexicalAnalysis);  
+  if (!lexicalAnalysis) return null;
+
   return (
     <div className="space-y-6">
       {/* Overall Score */}

@@ -1,75 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const ScoreCard = ({ title, score, max = 9.0, color, emoji }) => {
-  const percentage = (score / max) * 100;
-  return (
-    <div className={`p-4 bg-${color}-50 rounded-xl border-2 border-${color}-100 shadow-sm transition-transform hover:scale-[1.02]`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <span className="text-2xl mr-2">{emoji}</span>
-          <h3 className={`text-${color}-800 font-bold`}>{title}</h3>
-        </div>
-        <span className={`text-${color}-800 font-bold text-xl`}>
-          {score.toFixed(1)}<span className="text-sm opacity-75">/{max}</span>
-        </span>
-      </div>
-      <div className="relative pt-2">
-        <div className={`overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-${color}-200`}>
-          <div
-            style={{ width: `${percentage}%` }}
-            className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-${color}-500 transition-all duration-500`}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const ProgressPill = ({ score, label, max = 9 }) => {
-  const color = getScoreColor(score);
-  return (
-    <div className="flex items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      <div className={`w-8 h-8 rounded-full bg-${color}-100 flex items-center justify-center mr-3`}>
-        <span className={`text-sm font-bold text-${color}-800`}>{(score).toFixed(1)}</span>
-      </div>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-700">{label}</p>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full bg-${color}-500 transition-all duration-500`}
-            style={{ width: `${(score/max)*100}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SectionHeader = ({ emoji, title }) => (
-  <div className="flex items-center mb-4">
-    <span className="text-2xl mr-2">{emoji}</span>
-    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-  </div>
-);
-
-const AnalysisGrid = ({ children }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
-);
-
-// Shared Logic -----------------------------------------------------------------
-const getScoreColor = (score) => {
-  if (score >= 8) return 'green';
-  if (score >= 7) return 'blue';
-  if (score >= 6) return 'amber';
-  return 'red';
-};
-
-
-// Shared across both components
 
 
 const GrammarDetailsContent = ({ grammarAnalysis, ieltsScore }) => {
+  console.log(grammarAnalysis);
   if (!grammarAnalysis) return null;
 
   // Color scoring system

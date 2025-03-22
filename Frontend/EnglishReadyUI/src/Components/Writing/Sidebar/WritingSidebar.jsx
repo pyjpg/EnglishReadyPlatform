@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import CircularProgress from './CircularProgress';
-import FeedbackSummaryCard from '../Grading/FeedbackSummary';
 import CompactScoreIndicator from '../Grading/CompactScoreIndicator';
 import KeyImprovementItem from '../Grading/KeyImprovementItem';
 import FeedbackModalsManager from '../Grading/FeedbackModalManager';
@@ -23,60 +22,12 @@ const WritingSidebar = ({
   // Destructure API response with safe defaults
   const {
     grade = 0,
-    ielts_score = 0, // Extract IELTS score from feedback data
+    ielts_score = 0,
     grammar_analysis: grammarAnalysis = {},
     lexical_analysis: lexicalAnalysis = {},
     task_achievement_analysis: taskAnalysis = {},
     coherence_analysis: coherenceAnalysis = {}
   } = feedbackData || {};
-
-  // Get priority improvements from all categories
-  const getKeyImprovements = () => {
-    const improvements = [];
-    
-    // Task Achievement improvements
-    if (taskAnalysis?.feedback?.improvements?.length) {
-      improvements.push(...taskAnalysis.feedback.improvements);
-    }
-    
-    // Grammar improvements
-    if (grammarAnalysis?.feedback) {
-      
-      const grammarFeedback = typeof grammarAnalysis.feedback === 'string' 
-        ? grammarAnalysis.feedback 
-        : '';
-      if (grammarFeedback) {
-        improvements.push(grammarFeedback);
-      }
-      console.log(grammarFeedback);
-      console.log("oioiooaiaia");
-    }
-    
-    // Vocabulary improvements
-    if (lexicalAnalysis?.feedback?.improvements?.length) {
-      improvements.push(...lexicalAnalysis.feedback.improvements);
-    } else if (typeof lexicalAnalysis?.feedback === 'string') {
-      improvements.push(lexicalAnalysis.feedback);
-    }
-    
-    // Coherence improvements
-    if (coherenceAnalysis?.feedback?.improvements?.length) {
-      improvements.push(...coherenceAnalysis.feedback.improvements);
-    }
-
-    return improvements.slice(0, 3).map(text => ({
-      text,
-      priority: determinePriority(text)
-    }));
-  };
-
-  // Determine priority based on content
-  const determinePriority = (text) => {
-    const lowerText = text.toLowerCase();
-    if (lowerText.includes('add') || lowerText.includes('high')) return 'high';
-    if (lowerText.includes('medium')) return 'medium';
-    return 'low';
-  };
 
   // Format the score as a decimal (4.5/9.0)
   const formatScore = (score) => {
@@ -108,60 +59,124 @@ const WritingSidebar = ({
       </div>
     );
   };
-  console.log(grammarAnalysis);
-  // Generate vocabulary/word choice analysis
-  const renderVocabularyAnalysis = () => {
-    if (!lexicalAnalysis || !lexicalAnalysis.overall_score) return null;
+
+  // Get priority improvements from all categories
+  const getKeyImprovements = () => {
+    const improvements = [];
     
+    // Task Achievement improvements
+    if (taskAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...taskAnalysis.feedback.improvements);
+    }
+    
+    // Grammar improvements
+    if (grammarAnalysis?.feedback) {
+      const grammarFeedback = typeof grammarAnalysis.feedback === 'string' 
+        ? grammarAnalysis.feedback 
+        : '';
+      if (grammarFeedback) {
+        improvements.push(grammarFeedback);
+      }
+    }
+    
+    // Vocabulary improvements
+    if (lexicalAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...lexicalAnalysis.feedback.improvements);
+    } else if (typeof lexicalAnalysis?.feedback === 'string') {
+      improvements.push(lexicalAnalysis.feedback);
+    }
+    
+    // Coherence improvements
+    if (coherenceAnalysis?.feedback?.improvements?.length) {
+      improvements.push(...coherenceAnalysis.feedback.improvements);
+    }
+
+    return improvements.slice(0, 3).map(text => ({
+      text,
+      priority: determinePriority(text)
+    }));
+  };
+
+  // Determine priority based on content
+  const determinePriority = (text) => {
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('add') || lowerText.includes('high')) return 'high';
+    if (lowerText.includes('medium')) return 'medium';
+    return 'low';
+  };
+
+  // Consistent card renderer for all analysis types
+  const renderAnalysisCard = ({
+    analysisData,
+    criteriaType,
+    title,
+    scoreKey = 'overall_score',
+    colorClass = 'blue',
+    metricsRenderer,
+    feedbackKey
+  }) => {
+    if (!analysisData || !analysisData[scoreKey]) return null;
+
+    const score = analysisData[scoreKey];
+    const colorVariants = {
+      blue: { text: 'text-blue-600', bg: 'bg-blue-500' },
+      green: { text: 'text-green-600', bg: 'bg-green-500' },
+      purple: { text: 'text-purple-600', bg: 'bg-purple-500' },
+      amber: { text: 'text-amber-600', bg: 'bg-amber-500' }
+    };
+
+    // Extract feedback based on the provided key structure
+    let feedback;
+    if (feedbackKey) {
+      if (feedbackKey.includes('.')) {
+        const [key1, key2] = feedbackKey.split('.');
+        feedback = analysisData[key1] && analysisData[key1][key2];
+      } else {
+        feedback = analysisData[feedbackKey];
+      }
+    }
+
     return (
       <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
         <div className="flex justify-between items-center">
-          <h3 className="text-base font-medium text-gray-800">Vocabulary & Word Choice</h3>
+          <h3 className="text-base font-medium text-gray-800">{title}</h3>
           <button 
-            onClick={() => setActiveModal('vocabulary')}
+            onClick={() => setActiveModal(criteriaType)}
             className="text-xs text-blue-600 hover:text-blue-800"
           >
             View Details
           </button>
         </div>
         
+        {/* Score Section */}
         <div className="mt-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Vocabulary Score</span>
-            <span className="text-sm font-medium text-blue-600">{formatScore(lexicalAnalysis.overall_score)}/9.0</span>
+            <span className="text-sm font-medium text-gray-700">{title} Score</span>
+            <span className={`text-sm font-medium ${colorVariants[colorClass].text}`}>
+              {formatScore(score)}/9.0
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
             <div 
-              className="bg-blue-500 rounded-full h-2" 
-              style={{ width: `${(lexicalAnalysis.overall_score / 9) * 100}%` }}
-            ></div>
+              className={`${colorVariants[colorClass].bg} rounded-full h-2`} 
+              style={{ width: `${(score / 9) * 100}%` }}
+            />
           </div>
         </div>
-        
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-gray-500 mb-1">Unique Words</h4>
-            <p className="text-lg font-semibold text-gray-800">{lexicalAnalysis.unique_words || 0}</p>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="text-xs font-medium text-gray-500 mb-1">Lexical Diversity</h4>
-            <p className="text-lg font-semibold text-gray-800">
-              {lexicalAnalysis.unique_words && lexicalAnalysis.total_words
-                ? ((lexicalAnalysis.unique_words / lexicalAnalysis.total_words) * 100).toFixed(1)
-                : '0.0'}%
-            </p>
-          </div>
-        </div>
-        
-        {lexicalAnalysis.feedback && (
+
+        {/* Custom Metrics Section */}
+        {metricsRenderer && metricsRenderer(analysisData)}
+
+        {/* Feedback Section */}
+        {feedback && (
           <div className="mt-3">
             <h4 className="text-xs font-medium text-gray-700">Feedback</h4>
             <p className="text-sm text-gray-600 mt-1">
-              {Array.isArray(lexicalAnalysis.feedback)
-                ? lexicalAnalysis.feedback[0]
-                : typeof lexicalAnalysis.feedback === 'string'
-                  ? lexicalAnalysis.feedback
-                  : lexicalAnalysis.feedback?.improvements?.[0] || 'No specific feedback available'}
+              {Array.isArray(feedback)
+                ? feedback[0]
+                : typeof feedback === 'string'
+                  ? feedback
+                  : 'No specific feedback available'}
             </p>
           </div>
         )}
@@ -169,48 +184,79 @@ const WritingSidebar = ({
     );
   };
 
-  // Generate grammar analysis component
-  const renderGrammarAnalysis = () => {
-    if (!grammarAnalysis || !grammarAnalysis.overall_score) return null;
-    
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-        <div className="flex justify-between items-center">
-          <h3 className="text-base font-medium text-gray-800">Grammar & Sentence Structure</h3>
-          <button 
-            onClick={() => setActiveModal('grammar')}
-            className="text-xs text-blue-600 hover:text-blue-800"
-          >
-            View Details
-          </button>
+  // Vocabulary Analysis
+  const renderVocabularyAnalysis = () => renderAnalysisCard({
+    analysisData: lexicalAnalysis,
+    criteriaType: 'vocabulary',
+    title: 'Vocabulary & Word Choice',
+    colorClass: 'blue',
+    metricsRenderer: (data) => (
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <h4 className="text-xs font-medium text-gray-500 mb-1">Unique Words</h4>
+          <p className="text-lg font-semibold text-gray-800">{data.unique_words || 0}</p>
         </div>
-        
-        <div className="mt-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Grammar Score</span>
-            <span className="text-sm font-medium text-green-600">{formatScore(grammarAnalysis.overall_score)}/9.0</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-            <div 
-              className="bg-green-500 rounded-full h-2" 
-              style={{ width: `${(grammarAnalysis.overall_score / 9) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-        
-        <div className="mt-3">
-          <h4 className="text-xs font-medium text-gray-700">Grammar Feedback</h4>
-          <p className="text-sm text-gray-600 mt-1">
-            {typeof grammarAnalysis.feedback === 'string' 
-              ? grammarAnalysis.feedback 
-              : 'No specific feedback available'}
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <h4 className="text-xs font-medium text-gray-500 mb-1">Lexical Diversity</h4>
+          <p className="text-lg font-semibold text-gray-800">
+            {data.unique_words && data.total_words
+              ? ((data.unique_words / data.total_words) * 100).toFixed(1)
+              : '0.0'}%
           </p>
         </div>
-        
-        {renderSentenceAnalysis(grammarAnalysis.sentence_analysis)}
       </div>
-    );
-  };
+    ),
+    feedbackKey: 'feedback'
+  });
+
+  // Grammar Analysis
+  const renderGrammarAnalysis = () => renderAnalysisCard({
+    analysisData: grammarAnalysis,
+    criteriaType: 'grammar',
+    title: 'Grammar & Sentence Structure',
+    colorClass: 'green',
+    metricsRenderer: (data) => renderSentenceAnalysis(data.sentence_analysis),
+    feedbackKey: 'feedback'
+  });
+
+  // Task Achievement Analysis
+  const renderTaskAnalysis = () => renderAnalysisCard({
+    analysisData: taskAnalysis,
+    criteriaType: 'task',
+    title: 'Task Achievement',
+    colorClass: 'purple',
+    scoreKey: 'band_score',
+    feedbackKey: 'feedback.strengths',
+    metricsRenderer: (data) => (
+      <div className="mt-4">
+        <h4 className="text-xs font-medium text-gray-500 mb-2">Task Requirements Met</h4>
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-700">
+            {data.feedback?.strengths?.[0] || 'Strong topic relevance and task achievement'}
+          </p>
+        </div>
+      </div>
+    )
+  });
+
+  // Coherence Analysis
+  const renderCoherenceAnalysis = () => renderAnalysisCard({
+    analysisData: coherenceAnalysis,
+    criteriaType: 'coherence',
+    title: 'Coherence & Cohesion',
+    colorClass: 'amber',
+    feedbackKey: 'feedback.improvements',
+    metricsRenderer: (data) => (
+      <div className="mt-4">
+        <h4 className="text-xs font-medium text-gray-500 mb-2">Organization Quality</h4>
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-700">
+            {data.feedback?.strengths?.[0] || 'Logical flow and organization of ideas'}
+          </p>
+        </div>
+      </div>
+    )
+  });
 
   // Handler for submitting the essay
   const handleSubmit = () => {
@@ -280,23 +326,11 @@ const WritingSidebar = ({
             ))}
           </div>
           
-          {/* Detailed Analysis Cards */}
+          {/* Consistent Analysis Cards for all criteria */}
           {renderVocabularyAnalysis()}
           {renderGrammarAnalysis()}
-          
-          {/* Summary Cards */}
-          <FeedbackSummaryCard
-            title="Task Achievement"
-            summary={taskAnalysis?.feedback?.strengths?.[0] || 'No specific feedback available'}
-            onClick={() => setActiveModal('task')}
-            color="blue"
-          />
-          <FeedbackSummaryCard
-            title="Coherence"
-            summary={coherenceAnalysis?.feedback?.improvements?.[0] || 'No specific feedback available'}
-            onClick={() => setActiveModal('coherence')}
-            color="purple"
-          />
+          {renderTaskAnalysis()}
+          {renderCoherenceAnalysis()}
         </>
       ) : (
         <div className="flex-1 flex items-center justify-center">
@@ -325,8 +359,7 @@ const WritingSidebar = ({
       <FeedbackModalsManager
         activeModal={activeModal}
         setActiveModal={setActiveModal}
-        taskAnalysis={taskAnalysis}
-        feedbackData={feedbackData} // Pass the IELTS score to the modal manager
+        feedbackData={feedbackData}
       />
     </div>
   );
@@ -335,7 +368,7 @@ const WritingSidebar = ({
 WritingSidebar.propTypes = {
   feedbackData: PropTypes.shape({
     grade: PropTypes.number,
-    ielts_score: PropTypes.number, // Add PropType for IELTS score
+    ielts_score: PropTypes.number,
     grammar_analysis: PropTypes.shape({
       overall_score: PropTypes.number,
       feedback: PropTypes.oneOfType([

@@ -13,33 +13,60 @@ const FeedbackModalsManager = ({ activeModal, setActiveModal, feedbackData }) =>
     lexical_analysis: lexicalAnalysis = {},
     task_achievement_analysis: taskAnalysis = {},
     coherence_analysis: coherenceAnalysis = {},
-    ielts_score: ieltsScore = 0, // Destructure IELTS score
+    ielts_score: ieltsScore = 0,
   } = feedbackData || {};
-
-  console.log(grammarAnalysis);
-  // Modal content mapping to reduce repetitive code
-  const modals = [
-    { type: 'task', title: 'Task Achievement Details', component: TaskAchievementDetailsContent, analysis: taskAnalysis },
-    { type: 'grammar', title: 'Grammar & Sentence Structure', component: GrammarDetailsContent, analysis: grammarAnalysis },
-    { type: 'vocabulary', title: 'Vocabulary & Word Choice', component: VocabularyDetailsContent, analysis: lexicalAnalysis },
-    { type: 'coherence', title: 'Coherence & Cohesion', component: CoherenceDetailsContent, analysis: coherenceAnalysis }
-  ];
-
+  
+  console.log("Lexical Analysis in Manager:", lexicalAnalysis);
+  
   return (
     <>
-      {modals.map(({ type, title, component: ContentComponent, analysis }) => (
-  <FeedbackModal
-    key={type}
-    isOpen={activeModal === type}
-    onClose={() => setActiveModal(null)}
-    title={title}
-  >
-    <ContentComponent 
-      {...{ [`${type}Analysis`]: analysis }} 
-      ieltsScore={ieltsScore} // Pass IELTS score here
-    />
-  </FeedbackModal>
-))}
+      <FeedbackModal
+        key="task"
+        isOpen={activeModal === 'task'}
+        onClose={() => setActiveModal(null)}
+        title="Task Achievement Details"
+      >
+        <TaskAchievementDetailsContent
+          taskAchievementAnalysis={taskAnalysis}
+          ieltsScore={ieltsScore}
+        />
+      </FeedbackModal>
+      
+      <FeedbackModal
+        key="grammar"
+        isOpen={activeModal === 'grammar'}
+        onClose={() => setActiveModal(null)}
+        title="Grammar & Sentence Structure"
+      >
+        <GrammarDetailsContent
+          grammarAnalysis={grammarAnalysis}
+          ieltsScore={ieltsScore}
+        />
+      </FeedbackModal>
+      
+      <FeedbackModal
+        key="vocabulary"
+        isOpen={activeModal === 'vocabulary'}
+        onClose={() => setActiveModal(null)}
+        title="Vocabulary & Word Choice"
+      >
+        <VocabularyDetailsContent
+          lexicalAnalysis={lexicalAnalysis}
+          ieltsScore={ieltsScore}
+        />
+      </FeedbackModal>
+      
+      <FeedbackModal
+        key="coherence"
+        isOpen={activeModal === 'coherence'}
+        onClose={() => setActiveModal(null)}
+        title="Coherence & Cohesion"
+      >
+        <CoherenceDetailsContent
+          coherenceAnalysis={coherenceAnalysis}
+          ieltsScore={ieltsScore}
+        />
+      </FeedbackModal>
     </>
   );
 };
@@ -52,7 +79,7 @@ FeedbackModalsManager.propTypes = {
     lexical_analysis: PropTypes.object,
     task_achievement_analysis: PropTypes.object,
     coherence_analysis: PropTypes.object,
-    ielts_score: PropTypes.number // Add IELTS score prop type
+    ielts_score: PropTypes.number
   })
 };
 
