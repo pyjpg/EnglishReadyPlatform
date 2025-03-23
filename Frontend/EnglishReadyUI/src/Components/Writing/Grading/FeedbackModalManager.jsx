@@ -2,9 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import FeedbackModal from './FeedbackModals';
 import TaskAchievementDetailsContent from './TaskAchievementDetailsContent';
-import GrammarDetailsContent from './GrammarDetailsContent';
-import VocabularyDetailsContent from './VocabularyDetailsContent';
+import GrammarDetailsContent from './Grammar/GrammarDetailsContent';
+import VocabularyDetailsContent from './Lexical/VocabularyDetailsContent';
 import CoherenceDetailsContent from './CoherenceDetailsContent';
+import VocabularyFeedback from './Lexical/VocabularyDetailsContent';
 
 const FeedbackModalsManager = ({ activeModal, setActiveModal, feedbackData }) => {
   // Destructure feedbackData with defaults
@@ -50,7 +51,7 @@ const FeedbackModalsManager = ({ activeModal, setActiveModal, feedbackData }) =>
         onClose={() => setActiveModal(null)}
         title="Vocabulary & Word Choice"
       >
-        <VocabularyDetailsContent
+        <VocabularyFeedback
           lexicalAnalysis={lexicalAnalysis}
           ieltsScore={ieltsScore}
         />
