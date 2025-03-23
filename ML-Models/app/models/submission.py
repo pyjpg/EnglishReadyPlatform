@@ -9,6 +9,8 @@ class Submission(Base):
     text = Column(Text)
     task_type = Column(String)
     question_number = Column(Integer)
+    question_desc = Column(Text, nullable=True)  # New field
+    question_requirements = Column(Text, nullable=True)  # New field
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

@@ -123,11 +123,13 @@ async def submit_writing(
     db: Session = Depends(get_db)
 ):
     try:
-        # Create new submission
+        # Create new submission with updated fields
         db_submission = Submission(
             text=submission.text,
             task_type=submission.task_type,
-            question_number=submission.question_number
+            question_number=submission.question_number,
+            question_desc=submission.question_desc,
+            question_requirements=submission.question_requirements
         )
         
         # Analyze all aspects
@@ -187,6 +189,11 @@ async def submit_writing(
             'coherence_analysis': coherence_analysis,
             'task_achievement_analysis': task_analysis['task_achievement_analysis']
         }
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error processing submission: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     except Exception as e:
         db.rollback()

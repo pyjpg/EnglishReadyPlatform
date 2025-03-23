@@ -15,6 +15,8 @@ class SubmissionBase(BaseModel):
     text: str
     task_type: str
     question_number: int
+    question_desc: Optional[str] = None  # New field for question description
+    question_requirements: Optional[str] = None  # New field for question requirements
 
 class SubmissionCreate(SubmissionBase):
     pass
