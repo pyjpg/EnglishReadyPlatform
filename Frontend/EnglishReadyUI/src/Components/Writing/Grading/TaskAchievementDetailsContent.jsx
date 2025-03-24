@@ -1,7 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const TaskAchievementDetailsContent = ({ taskAchievementAnalysis }) => {
+const TaskAchievementDetailsContent = ({ taskAchievementAnalysis, taskAchievementFeedback }) => {
+  // Use either the nested feedback or the separate feedback prop
+  const feedback = taskAchievementFeedback || taskAchievementAnalysis?.feedback;
+  
   if (!taskAchievementAnalysis) return null;
   
   // For readability - destructure nested objects
@@ -138,17 +141,17 @@ const TaskAchievementDetailsContent = ({ taskAchievementAnalysis }) => {
         </div>
       )}
       
-      {/* Feedback */}
-      {taskAchievementAnalysis.feedback && (
+      {/* Feedback Section - Centralized */}
+      {feedback && (
         <div>
           <h3 className="text-lg font-medium text-gray-800 mb-3">Feedback</h3>
           
           {/* Strengths */}
-          {taskAchievementAnalysis.feedback.strengths && taskAchievementAnalysis.feedback.strengths.length > 0 && (
-            <div className="mb-4">
+          {feedback.strengths && feedback.strengths.length > 0 && (
+            <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-100">
               <h4 className="text-base font-medium text-green-700 mb-2">Strengths</h4>
-              <ul className="list-disc pl-5 space-y-1">
-                {taskAchievementAnalysis.feedback.strengths.map((strength, index) => (
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                {feedback.strengths.map((strength, index) => (
                   <li key={index} className="text-green-700">{strength}</li>
                 ))}
               </ul>
@@ -156,11 +159,11 @@ const TaskAchievementDetailsContent = ({ taskAchievementAnalysis }) => {
           )}
           
           {/* Improvements */}
-          {taskAchievementAnalysis.feedback.improvements && taskAchievementAnalysis.feedback.improvements.length > 0 && (
-            <div className="mb-4">
+          {feedback.improvements && feedback.improvements.length > 0 && (
+            <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
               <h4 className="text-base font-medium text-amber-700 mb-2">Areas for Improvement</h4>
-              <ul className="list-disc pl-5 space-y-1">
-                {taskAchievementAnalysis.feedback.improvements.map((improvement, index) => (
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                {feedback.improvements.map((improvement, index) => (
                   <li key={index} className="text-amber-700">{improvement}</li>
                 ))}
               </ul>
@@ -168,18 +171,18 @@ const TaskAchievementDetailsContent = ({ taskAchievementAnalysis }) => {
           )}
           
           {/* Specific Suggestions */}
-          {taskAchievementAnalysis.feedback.specific_suggestions && Object.keys(taskAchievementAnalysis.feedback.specific_suggestions).length > 0 && (
-            <div>
+          {feedback.specific_suggestions && Object.keys(feedback.specific_suggestions).length > 0 && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
               <h4 className="text-base font-medium text-blue-700 mb-2">Specific Suggestions</h4>
-              {Object.entries(taskAchievementAnalysis.feedback.specific_suggestions).map(([category, suggestions]) => (
+              {Object.entries(feedback.specific_suggestions).map(([category, suggestions]) => (
                 suggestions.length > 0 && (
-                  <div key={category} className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <div key={category} className="mb-3">
                     <h5 className="uppercase text-xs font-semibold text-blue-800 mb-2">
                       {category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                     </h5>
-                    <ul className="list-disc pl-5 space-y-1">
+                    <ul className="list-disc pl-5 space-y-1 text-sm">
                       {suggestions.map((suggestion, index) => (
-                        <li key={index} className="text-blue-700 text-sm">{suggestion}</li>
+                        <li key={index} className="text-blue-700">{suggestion}</li>
                       ))}
                     </ul>
                   </div>
@@ -213,7 +216,14 @@ TaskAchievementDetailsContent.propTypes = {
         PropTypes.arrayOf(PropTypes.string)
       )
     })
-  }).isRequired
+  }).isRequired,
+  taskAchievementFeedback: PropTypes.shape({
+    strengths: PropTypes.arrayOf(PropTypes.string),
+    improvements: PropTypes.arrayOf(PropTypes.string),
+    specific_suggestions: PropTypes.objectOf(
+      PropTypes.arrayOf(PropTypes.string)
+    )
+  })
 };
 
 export default TaskAchievementDetailsContent;

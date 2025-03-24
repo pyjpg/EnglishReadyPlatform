@@ -12,7 +12,9 @@ const WritingSidebar = ({
   onExit,
   essayText,
   taskType,
-  questionNumber
+  questionNumber,
+  questionDesc = "The graph above shows population growth in different regions. Write a report describing the key features and make comparisons where relevant. You should write at least 150 words.",
+  questionRequirements = "A strong introduction should paraphrase the question and provide a general overview without specific data."
 }) => {
   const [activeModal, setActiveModal] = useState(null);
   const [expandedSections, setExpandedSections] = useState({});
@@ -317,7 +319,9 @@ const WritingSidebar = ({
     const payload = {
       text: essayText,
       task_type: taskType,
-      question_number: questionNumber
+      question_number: questionNumber,
+      question_desc: questionDesc,
+      question_requirements: questionRequirements
     };
     
     // Call the onSubmit function with the payload
@@ -464,7 +468,9 @@ WritingSidebar.propTypes = {
   onExit: PropTypes.func.isRequired,
   essayText: PropTypes.string.isRequired,
   taskType: PropTypes.string.isRequired,
-  questionNumber: PropTypes.number.isRequired
+  questionNumber: PropTypes.number.isRequired,
+  questionDesc: PropTypes.string,
+  questionRequirements: PropTypes.string,
 };
 
 export default WritingSidebar;
