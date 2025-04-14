@@ -19,7 +19,11 @@ const WritingMode = ({
     { id: 'analysis', label: 'Analysis' },
     { id: 'conclusion', label: 'Conclusion' }
   ];
-  
+  const [sectionsData, setSectionsData] = useState({
+    introduction: null,
+    analysis: null,
+    conclusion: null
+  });
   const [selectedSection, setSelectedSection] = useState(sections[0].id);
   const [focusMode, setFocusMode] = useState(false);
   // Store content for each section
@@ -29,6 +33,11 @@ const WritingMode = ({
     conclusion: ''
   });
  
+  const [sectionAttempts, setSectionAttempts] = useState({
+    introduction: 3,
+    analysis: 3,
+    conclusion: 3
+  });
   
   // Auto-save timer
   const [lastSaved, setLastSaved] = useState(null);
@@ -70,33 +79,50 @@ const WritingMode = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 const [writingTaskData, setWritingTaskData] = useState(null);
 
-const handleWritingSubmission = async () => {
+const handleWritingSubmission = async (payload) => {
+  if (sectionAttempts[selectedSection] <= 0) {
+    return; // No attempts left
+  }
+  
   setIsSubmitting(true);
+  
   try {
-    const fullEssay = Object.values(sectionContent).join('\n\n');
+    // Decrease attempts for current section
+    setSectionAttempts(prev => ({
+      ...prev, 
+      [selectedSection]: prev[selectedSection] - 1
+    }));
+    
     const response = await fetch('http://127.0.0.1:8000/api/submit-writing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        text: fullEssay,
-        task_type: 'argument',
-        question_number: 3
+        text: payload.text,
+        task_type: payload.task_type,
+        question_number: payload.question_number,
+        section: payload.section
       }),
     });
 
     if (!response.ok) throw new Error('Submission failed');
     
     const data = await response.json();
+    
+    // Store section-specific data
+    setSectionsData(prev => ({
+      ...prev,
+      [payload.section]: data
+    }));
+    
+    // Also update current writing task data for sidebar display
     setWritingTaskData(data);
-
+    
   } catch (error) {
     console.error('Submission error:', error);
-    
   } finally {
     setIsSubmitting(false);
   }
 };
-
 
   // Handle section change via dropdown
   const handleSectionChange = (e) => {
@@ -160,6 +186,18 @@ const handleWritingSubmission = async () => {
       textAreaRef.current.dispatchEvent(event);
     }
   }, [selectedSection]);
+  useEffect(() => {
+    // Load attempts from localStorage on initial load
+    const savedAttempts = localStorage.getItem('sectionAttempts');
+    if (savedAttempts) {
+      setSectionAttempts(JSON.parse(savedAttempts));
+    }
+  }, []);
+  
+  // Save attempts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('sectionAttempts', JSON.stringify(sectionAttempts));
+  }, [sectionAttempts]);
 
   // Calculate total word count across all sections
   const totalWordCount = Object.values(sectionContent)
@@ -273,20 +311,66 @@ const handleWritingSubmission = async () => {
        </button>
        <div className="text-sm text-gray-600 self-center">
          {totalWordCount}/150 words
-       </div>
+          </div>
+          <div className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-full shadow-sm border border-blue-100">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div 
+          key={i}
+          className={`w-3 h-3 rounded-full transition-all ${
+            i < sectionAttempts[selectedSection]
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm scale-100'
+              : 'bg-gray-200 scale-90 opacity-40'
+          }`}
+        />
+      ))}
+      <span className={`ml-1 text-sm font-medium ${
+        sectionAttempts[selectedSection] === 0 
+          ? 'text-red-500' 
+          : sectionAttempts[selectedSection] === 1
+            ? 'text-orange-500'
+            : 'text-blue-600'
+      }`}>
+        {sectionAttempts[selectedSection]} attempt{sectionAttempts[selectedSection] !== 1 ? 's' : ''} left
+      </span>
+    </div>
        <button
-         onClick={handleWritingSubmission}
-
-         className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-       >
-         Submit
-       </button>
+        onClick={handleWritingSubmission}
+        disabled={isSubmitting || sectionAttempts[selectedSection] <= 0}
+        className={`px-6 py-2 ${
+          sectionAttempts[selectedSection] <= 0 
+          ? 'bg-gray-400 cursor-not-allowed' 
+          : 'bg-blue-600 hover:bg-blue-700'
+        } text-white rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+      >
+        {sectionAttempts[selectedSection] <= 0 ? 'No attempts left' : 'Submit'}
+      </button>
      </div>
         ) : (
           <div className="mt-2 flex justify-between text-sm">
             <div className="text-gray-600">
               Total word count: {totalWordCount}/150 (minimum)
             </div>
+            <div className="flex items-center space-x-1 px-3 py-1.5 bg-white rounded-full shadow-md border border-blue-200 animate-pulse-light">
+  {Array.from({ length: 3 }).map((_, i) => (
+    <div 
+      key={i}
+      className={`w-4 h-4 rounded-full transition-all ${
+        i < sectionAttempts[selectedSection]
+          ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md scale-100'
+          : 'bg-gray-200 scale-90 opacity-40'
+      }`}
+    />
+  ))}
+  <span className={`ml-1 text-sm font-medium ${
+    sectionAttempts[selectedSection] === 0 
+      ? 'text-red-500 font-bold' 
+      : sectionAttempts[selectedSection] === 1
+        ? 'text-orange-500 font-bold'
+        : 'text-blue-600 font-bold'
+  }`}>
+    {sectionAttempts[selectedSection]} attempt{sectionAttempts[selectedSection] !== 1 ? 's' : ''} left
+  </span>
+</div>
             <div className="text-blue-600">
               {sections.map((section, index) => (
                 <span key={section.id} className="mx-1">
@@ -307,13 +391,16 @@ const handleWritingSubmission = async () => {
       {!focusMode && (
   <div>
     <WritingSidebar
-   
-   feedbackData={writingTaskData}
-   isSubmitting={isSubmitting}
-   onSubmit={handleWritingSubmission}
-   onExit={() => setIsWritingMode(false)}
-   currentText={Object.values(sectionContent).join('\n\n')}
- />
+  feedbackData={writingTaskData}
+  isSubmitting={isSubmitting}
+  onSubmit={handleWritingSubmission}
+  onExit={() => setIsWritingMode(false)}
+  essayText={Object.values(sectionContent).join('\n\n')}
+  taskType="argument"
+  questionNumber={3}
+  selectedSection={selectedSection}
+  sectionsData={sectionsData}
+/>
     <FeedbackModalsManager
  
   feedbackData={writingTaskData} // Passing directly to modal manager

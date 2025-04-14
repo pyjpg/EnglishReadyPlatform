@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import FeedbackModal from './FeedbackModals';
-import TaskAchievementDetailsContent from './TaskAchievementDetailsContent';
+import TaskAchievementDetailsContent from './TaskAchievement/TaskAchievementDetailsContent';
 import GrammarDetailsContent from './Grammar/GrammarDetailsContent';
 import VocabularyDetailsContent from './Lexical/VocabularyDetailsContent';
-import CoherenceDetailsContent from './CoherenceDetailsContent';
+import CoherenceDetailsContent from './Coherence/CoherenceDetailsContent';
 import VocabularyFeedback from './Lexical/VocabularyDetailsContent';
 
 const FeedbackModalsManager = ({ activeModal, setActiveModal, feedbackData }) => {

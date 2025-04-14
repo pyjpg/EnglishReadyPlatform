@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import FeedbackIcons from '../Grading/FeedbackIcons';
+import FeedbackIcons from '../FeedbackIcons';
 
 const CoherenceDetailsContent = ({ coherenceAnalysis }) => {
   if (!coherenceAnalysis) {
