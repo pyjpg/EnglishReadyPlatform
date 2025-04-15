@@ -69,7 +69,11 @@ const WritingSidebar = ({
   
   // Check if we have feedback data to determine if the essay has been graded
   const isGraded = feedbackData && Object.keys(feedbackData).length > 0;
-  
+  // Gets the direct grade from the submission data
+  const getDbGrade = () => {
+    return feedbackData?.grade || 0; // fallback to 0 if undefined/null
+  };
+
   // Calculate the overall grade based on section data
   const calculateOverallGrade = () => {
     if (!sectionsData || Object.keys(sectionsData).length === 0) {
@@ -100,10 +104,11 @@ const WritingSidebar = ({
   };
   
   const overallGrade = calculateOverallGrade();
-  
+  const circularGrade = getDbGrade();
+  console.log(circularGrade, overallGrade, feedbackData);
   // Destructure API response with safe defaults
   const {
-    grade = overallGrade,
+    grade = circularGrade,
     ielts_score = overallGrade,
     grammar_analysis: grammarAnalysis = {},
     lexical_analysis: lexicalAnalysis = {},
@@ -213,12 +218,8 @@ const WritingSidebar = ({
         
         <div className="mt-3 flex flex-col items-center">
           <div className="h-24 w-24 mb-2">
-            <CircularProgress percentage={percentageScore} />
+            <CircularProgress percentage={overallGrade} />
           </div>
-          <span className={`text-xl font-bold ${getScoreColor(sectionScore)}`}>
-            {formatScore(sectionScore)}/9.0
-          </span>
-          <span className="text-sm text-gray-500">Section Score</span>
         </div>
         
         <div className="mt-4">
@@ -572,38 +573,40 @@ const WritingSidebar = ({
           {renderSectionScoreCard()}
           
           {/* Overall progress */}
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-            <h3 className="text-base font-medium text-gray-800">Overall Progress</h3>
-            <div className="mt-2">
-              {Object.keys(sectionsData).map(section => {
-                const score = sectionsData[section]?.grade || 0;
-                const percentage = Math.round((score / 9) * 100);
-                
-                return (
-                  <div key={section} className="mb-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700 capitalize">{section}</span>
-                      <span className="text-sm font-medium text-blue-600">
-                        {formatScore(score)}/9.0
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="bg-blue-500 rounded-full h-2" 
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+<div className="bg-white rounded-lg shadow-sm p-4 mb-5">
+  <h3 className="text-base font-medium text-gray-800">Overall Progress</h3>
+  <div className="mt-2">
+    {Object.keys(sectionsData).map(section => {
+      // Assuming the grade is already on a 0-100 scale
+      const score = sectionsData[section]?.grade || 0;
+      // Use the score directly as percentage (assuming it's already 0-100)
+      const percentage = Math.min(100, Math.round(score));
+      
+      return (
+        <div key={section} className="mb-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700 capitalize">{section}</span>
+            <span className="text-sm font-medium text-blue-600">
+              {score.toFixed(1)}/100.0
+            </span>
           </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+            <div 
+              className="bg-blue-500 rounded-full h-2" 
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
         </>
       ) : (
         // When no sections data, show the current grade
         <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
           <h3 className="text-base font-medium text-gray-800">Current Grade</h3>
-          <CircularProgress percentage={Math.round((grade / 9) * 100)} />
+          <CircularProgress percentage={grade} />
           
           {isGraded && (
             <>

@@ -19,18 +19,21 @@ const WritingModeExitManager = ({
     conclusion: { score: 0, percentage: 0 }
   });
 
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    if (sectionsData) {
+    if (sectionsData && Object.keys(sectionsData).length > 0) {
       calculateScores();
       generateFinalFeedback();
     }
   }, [sectionsData]);
 
-  const navigate = useNavigate();
-  
   const calculateScores = () => {
     // Calculate weighted average from all sections
-    const sections = Object.keys(sectionsData);
+    const sections = Object.keys(sectionsData).filter(key => 
+      ['introduction', 'analysis', 'conclusion'].includes(key)
+    );
+    
     if (sections.length === 0) return;
 
     const weights = {
@@ -44,31 +47,40 @@ const WritingModeExitManager = ({
     const newSectionScores = { ...sectionScores };
 
     sections.forEach(section => {
-      if (sectionsData[section]?.grade) {
-        // Calculate IELTS band score (0-9) for each section
-        const sectionIeltsScore = sectionsData[section].grade;
-        // Calculate percentage (0-100%) for the circular progress
-        const sectionPercentage = Math.round((sectionsData[section].grade / 9) * 100);
+      if (sectionsData[section] && typeof sectionsData[section].grade === 'number') {
+        // Use the actual grade from sectionsData (assuming it's already on a 0-100 scale)
+        const sectionScore = Math.min(100, Math.max(0, sectionsData[section].grade));
+        
+        // The percentage is the same as the score since we're already using 0-100 scale
+        const sectionPercentage = sectionScore;
         
         newSectionScores[section] = {
-          score: sectionIeltsScore,
+          score: sectionScore,
           percentage: sectionPercentage
         };
         
-        totalScore += sectionIeltsScore * (weights[section] || 0.33);
+        totalScore += sectionScore * (weights[section] || 0.33);
         totalWeight += (weights[section] || 0.33);
       }
     });
 
+    // Calculate the final weighted average
     const calculatedFinalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0;
-    setFinalScore(parseFloat(calculatedFinalScore.toFixed(1)));
-    setPercentageScore(Math.round((calculatedFinalScore / 9) * 100));
+    
+    // Ensure score is within the proper range (0-100)
+    const normalizedScore = Math.min(100, Math.max(0, calculatedFinalScore));
+    
+    setFinalScore(parseFloat(normalizedScore.toFixed(1)));
+    setPercentageScore(normalizedScore); // Percentage is the same as the score in 0-100 scale
     setSectionScores(newSectionScores);
   };
 
   const generateFinalFeedback = () => {
     // Aggregate feedback from all sections
-    const sections = Object.keys(sectionsData);
+    const sections = Object.keys(sectionsData).filter(key => 
+      ['introduction', 'analysis', 'conclusion'].includes(key)
+    );
+    
     if (sections.length === 0) return;
 
     // Get top improvements from each section
@@ -93,14 +105,14 @@ const WritingModeExitManager = ({
       }
     });
     
-    // Create personalized feedback
+    // Create personalized feedback based on 0-100 scale
     let feedback = '';
     
-    if (finalScore >= 8) {
+    if (finalScore >= 85) {
       feedback = `Excellent work, ${userName}! Your essay demonstrates a strong command of English writing skills. `;
-    } else if (finalScore >= 6.5) {
+    } else if (finalScore >= 70) {
       feedback = `Good job, ${userName}. Your essay shows competent English writing skills with some areas for improvement. `;
-    } else if (finalScore >= 5) {
+    } else if (finalScore >= 55) {
       feedback = `${userName}, you've shown basic competency in your writing. With some focused practice, you can improve significantly. `;
     } else {
       feedback = `${userName}, you've made a good start. Let's work on developing your writing skills further. `;
@@ -119,14 +131,17 @@ const WritingModeExitManager = ({
     setShowModal(false);
     onExit(finalScore, finalFeedback);
     navigate("/");
-    window.location.reload();
+  
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 500); 
   };
-
-  // Function to get color class based on score
+  // Function to get color class based on score (0-100 scale)
   const getScoreColorClass = (score) => {
-    if (score >= 7.5) return "text-green-600";
-    if (score >= 6) return "text-blue-600";
-    if (score >= 5) return "text-amber-600";
+    if (score >= 85) return "text-green-600";
+    if (score >= 70) return "text-blue-600";
+    if (score >= 55) return "text-amber-600";
     return "text-red-600";
   };
 
@@ -134,11 +149,11 @@ const WritingModeExitManager = ({
     <>
       {/* Exit Button */}
       <button
-        onClick={() => setShowModal(true)}
-        className="w-full px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-      >
-        Complete & Return to Chat
-      </button>
+          onClick={() => setShowModal(true)}
+          className="w-full px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+        >
+          Complete & Return to Chat
+        </button>
     
       {/* Modal */}
       {showModal && (
@@ -151,9 +166,9 @@ const WritingModeExitManager = ({
               <div className="flex flex-col items-center mb-2">
                 <CircularProgress percentage={percentageScore} />
                 <span className={`text-2xl font-bold mt-2 ${getScoreColorClass(finalScore)}`}>
-                  {finalScore}/9.0
+                  {finalScore.toFixed(1)}/100.0
                 </span>
-                <span className="text-sm text-gray-500">Final IELTS Score</span>
+                <span className="text-sm text-gray-500">Final Score</span>
               </div>
             </div>
             
@@ -166,32 +181,39 @@ const WritingModeExitManager = ({
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Section Breakdown</h3>
               <div className="space-y-4">
-                {Object.keys(sectionScores).map(section => (
-                  <div key={section} className="bg-gray-50 p-3 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="capitalize text-gray-700 font-medium">{section}</span>
-                      <span className={`font-medium ${getScoreColorClass(sectionScores[section].score)}`}>
-                        {sectionScores[section].score.toFixed(1)}/9.0
-                      </span>
+                {Object.keys(sectionScores).map(section => {
+                  // Only show sections that have data
+                  if (!sectionsData[section] || typeof sectionsData[section].grade !== 'number') {
+                    return null;
+                  }
+                  
+                  return (
+                    <div key={section} className="bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="capitalize text-gray-700 font-medium">{section}</span>
+                        <span className={`font-medium ${getScoreColorClass(sectionScores[section].score)}`}>
+                          {sectionScores[section].score.toFixed(1)}/100.0
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`rounded-full h-2 ${
+                            sectionScores[section].score >= 85 ? "bg-green-500" : 
+                            sectionScores[section].score >= 70 ? "bg-blue-500" : 
+                            sectionScores[section].score >= 55 ? "bg-amber-500" : 
+                            "bg-red-500"
+                          }`}
+                          style={{ width: `${sectionScores[section].percentage}%` }}
+                        />
+                      </div>
+                      {sectionsData[section]?.task_achievement_analysis?.feedback?.improvements?.length > 0 && (
+                        <p className="text-xs text-gray-600 mt-1 italic">
+                          "{sectionsData[section].task_achievement_analysis.feedback.improvements[0]}"
+                        </p>
+                      )}
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`rounded-full h-2 ${
-                          sectionScores[section].score >= 7.5 ? "bg-green-500" : 
-                          sectionScores[section].score >= 6 ? "bg-blue-500" : 
-                          sectionScores[section].score >= 5 ? "bg-amber-500" : 
-                          "bg-red-500"
-                        }`}
-                        style={{ width: `${sectionScores[section].percentage}%` }}
-                      />
-                    </div>
-                    {sectionsData[section]?.task_achievement_analysis?.feedback?.improvements?.length > 0 && (
-                      <p className="text-xs text-gray-600 mt-1 italic">
-                        "{sectionsData[section]?.task_achievement_analysis?.feedback?.improvements[0]}"
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             
@@ -204,7 +226,7 @@ const WritingModeExitManager = ({
               </button>
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 Continue Writing
               </button>
