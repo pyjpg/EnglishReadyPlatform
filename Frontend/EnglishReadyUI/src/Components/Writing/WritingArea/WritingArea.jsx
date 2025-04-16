@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React,{ useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 const WritingArea = ({ textAreaRef, onSubmit }) => {
@@ -74,8 +74,8 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
               disabled={isSubmitting}
             />
 
-            {/* Position indicators at the bottom with z-index to prevent overlap */}
-            <div className="absolute bottom-2 left-3 flex items-center z-10">
+            
+            <div className="absolute bottom-2 left-3 flex items-center z-10" role="progressbar" aria-valuenow={wordCount} aria-valuemin={0} aria-valuemax={minWords}>
               <div className="bg-gray-100 rounded-full h-1.5 w-32">
                 <div 
                   className={`h-1.5 rounded-full ${wordCount >= minWords ? 'bg-green-500' : 'bg-blue-500'}`}
