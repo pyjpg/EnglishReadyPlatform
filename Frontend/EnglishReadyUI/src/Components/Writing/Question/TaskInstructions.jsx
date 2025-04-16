@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-const taskImage = new URL('../../../assets/image.jpg', import.meta.url).href;
+import taskImage from '../../../assets/image.jpg';
 
 const TaskInstructions = ({ selectedSection, guidelines, hints }) => {
   const [isImageMaximized, setIsImageMaximized] = useState(false);
