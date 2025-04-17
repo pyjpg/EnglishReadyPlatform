@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from "react-router-dom";
-import CircularProgress from './Sidebar/CircularProgress';
+import CircularProgress from './Sidebar/ScoreCard/CircularProgress';
 
 const WritingModeExitManager = ({ 
   sectionsData, 

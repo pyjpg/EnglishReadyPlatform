@@ -1,15 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import CircularProgress from '../CircularProgress';
+import CircularProgress from './CircularProgress';
 
 
 const SectionScoreCard = ({ selectedSection, sectionScores, sectionAttempts, feedbackData }) => {
   if (!selectedSection) return null;
   
-  // Get section score from the sectionScores object
+ 
   const sectionScore = sectionScores[selectedSection]?.score || 0;
   
-  // Format section name with first letter capitalized
   const sectionDisplayName = selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1);
   
   console.log("SectionScoreCard received feedbackData:", feedbackData);

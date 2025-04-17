@@ -17,7 +17,7 @@ const FeedbackModalsManager = ({ activeModal, setActiveModal, feedbackData }) =>
     ielts_score: ieltsScore = 0,
   } = feedbackData || {};
   
-  console.log("Lexical Analysis in Manager:", lexicalAnalysis);
+  
   
   return (
     <>
