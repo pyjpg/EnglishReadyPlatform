@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
-import WritingSidebar from './Sidebar/WritingSidebar';
-import TaskInstructions from './Question/TaskInstructions';
-import WritingArea from './WritingArea/WritingArea';
-import FeedbackModalsManager from './Grading/FeedbackModalManager';
+import React, { useState, useEffect } from 'react';
+import WritingSidebar from '../Sidebar/WritingSidebar';
+import TaskInstructions from '../Question/TaskInstructions';
+import WritingArea from '../WritingArea/WritingArea';
+import FeedbackModalsManager from '../Grading/FeedbackModalManager';
 
 const WritingMode = ({ 
   textAreaRef, 
@@ -199,12 +199,15 @@ const handleWritingSubmission = async (payload) => {
     localStorage.setItem('sectionAttempts', JSON.stringify(sectionAttempts));
   }, [sectionAttempts]);
 
-  // Calculate total word count across all sections
-  const totalWordCount = Object.values(sectionContent)
+  const currentTextValue = textAreaRef.current ? textAreaRef.current.value : '';
+  const currentWordCount = currentTextValue.trim().split(/\s+/).filter(word => word !== '').length;
+  const storedWordCount = Object.values(sectionContent)
     .join(' ')
     .trim()
     .split(/\s+/)
     .filter(word => word !== '').length;
+    const totalWordCount = currentWordCount + storedWordCount - (sectionContent[selectedSection] ? 
+    sectionContent[selectedSection].trim().split(/\s+/).filter(word => word !== '').length : 0);
 
   return (
     <div className="fixed inset-0 bg-white flex">

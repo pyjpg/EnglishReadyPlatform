@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Route, Routes } from "react-router-dom";
 import { createDirectLine } from "botframework-webchat";
-import CustomWebChat from "./Components/CustomWebChat";
-import WritingMode from "./Components/Writing/WritingMode";
+import CustomWebChat from "./Components/WebChat/CustomWebChat";
+import WritingMode from "./Components/Writing/WritingMode/WritingMode";
 
 function App() {
   const [directLine, setDirectLine] = useState(null);

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Components } from 'botframework-webchat';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -7,9 +7,7 @@ function CustomWebChat({ directLine }) {
   const navigate = useNavigate();
   const chatContainerRef = useRef(null);
   const transcriptRef = useRef(null);
-  const [writingTaskData, setWritingTaskData] = useState(null);
-
-  // Mutation observer setup
+  
   useEffect(() => {
     const scrollToBottom = () => {
       if (transcriptRef.current) {
@@ -18,7 +16,9 @@ function CustomWebChat({ directLine }) {
     };
 
     const handleBotMessage = (messageContent) => {
-      if (messageContent.includes('please write your introduction')) {
+  
+      
+      if (messageContent.includes('please write your')) {
         navigate('/writing', {
           state: {
             questionNumber: 3,
@@ -34,11 +34,15 @@ function CustomWebChat({ directLine }) {
         if (mutation.addedNodes.length > 0) {
           const addedNode = mutation.addedNodes[0];
           if (addedNode.tagName === 'ARTICLE') {
-            const messageContent = addedNode.innerText
-              .replace('Bot said:', '')
-              .trim()
-              .toLowerCase();
-            handleBotMessage(messageContent);
+            const nodeContent = addedNode.textContent || addedNode.innerText;
+            
+            if (nodeContent) {
+              const messageContent = nodeContent
+                .replace(/Bot said:/i, '') 
+                .trim()
+                .toLowerCase();
+              handleBotMessage(messageContent);
+            }
           }
           scrollToBottom();
         }
@@ -55,7 +59,6 @@ function CustomWebChat({ directLine }) {
     return () => observer.disconnect();
   }, [navigate]);
 
- 
   return (
     <div ref={chatContainerRef} className="fixed inset-0 flex flex-col bg-gray-100">
       <Components.Composer directLine={directLine}>

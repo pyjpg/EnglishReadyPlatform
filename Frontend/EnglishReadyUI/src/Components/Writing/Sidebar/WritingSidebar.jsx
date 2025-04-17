@@ -137,31 +137,33 @@ const WritingSidebar = ({
     ); 
 
  
-
-
-  const handleSubmit = () => {
-    if (sectionAttempts[selectedSection] <= 0) {
-      return;
-    }
-    setSectionAttempts(prev => ({
-      ...prev,
-      [selectedSection]: prev[selectedSection] - 1
-    }));
+    const handleSubmit = () => {
+      if (sectionAttempts[selectedSection] <= 0) {
+        return;
+      }
+      
+      const updatedAttempts = {
+        ...sectionAttempts,
+        [selectedSection]: sectionAttempts[selectedSection] - 1
+      };
+      
+      // Update localStorage first (this is important for the test)
+      localStorage.setItem('sectionAttempts', JSON.stringify(updatedAttempts));
+      
+      // Then update state
+      setSectionAttempts(updatedAttempts);
     
-
-    const payload = {
-      text: essayText,
-      task_type: taskType,
-      question_number: questionNumber,
-      question_desc: questionDesc,
-      question_requirements: questionRequirements,
-      section: selectedSection
+      const payload = {
+        text: essayText,
+        task_type: taskType,
+        question_number: questionNumber,
+        question_desc: questionDesc,
+        question_requirements: questionRequirements,
+        section: selectedSection
+      };
+      
+      onSubmit(payload);
     };
-    
-
-    onSubmit(payload);
-  };
-
   const renderContent = () => {
     if (!isGraded) {
       return (
