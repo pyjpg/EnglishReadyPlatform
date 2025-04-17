@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import CircularProgress from './CircularProgress';
 import CompactScoreIndicator from '../Grading/CompactScoreIndicator';
 import KeyImprovementItem from '../Grading/KeyImprovementItem';
 import FeedbackModalsManager from '../Grading/FeedbackModalManager';
 import WritingModeExitManager from '../ExitManager';
-
+import OverallProgress from './OverallProgress';
+import { useOverallGrade } from '../../../hooks/useOverallGrade';
+import SectionScoreCard from './ScoreCard/SectionScoreCard';
 const WritingSidebar = ({
   feedbackData,
   isSubmitting,
@@ -73,39 +74,14 @@ const WritingSidebar = ({
   const getDbGrade = () => {
     return feedbackData?.grade || 0; // fallback to 0 if undefined/null
   };
+  console.log(sectionsData);
 
   // Calculate the overall grade based on section data
-  const calculateOverallGrade = () => {
-    if (!sectionsData || Object.keys(sectionsData).length === 0) {
-      return feedbackData?.grade || 0;
-    }
-    
-    const weights = {
-      introduction: 0.2,
-      analysis: 0.6,
-      conclusion: 0.2
-    };
-    
-    let totalScore = 0;
-    let totalWeight = 0;
-    
-    const validSections = Object.keys(sectionsData).filter(section => 
-      ['introduction', 'analysis', 'conclusion'].includes(section)
-    );
-    
-    validSections.forEach(section => {
-      if (sectionsData[section]?.grade) {
-        totalScore += sectionsData[section].grade * (weights[section] || 0.33);
-        totalWeight += (weights[section] || 0.33);
-      }
-    });
-    
-    return totalWeight > 0 ? (totalScore / totalWeight) : (feedbackData?.grade || 0);
-  };
-  
-  const overallGrade = calculateOverallGrade();
+  const overallGrade = useOverallGrade(sectionsData, feedbackData);
+  console.log(overallGrade);
+
   const circularGrade = getDbGrade();
-  console.log(circularGrade, overallGrade, feedbackData);
+  console.log(circularGrade, overallGrade);
   // Destructure API response with safe defaults
   const {
     grade = circularGrade,
@@ -193,63 +169,6 @@ const WritingSidebar = ({
       task_achievement_analysis: sectionFeedback.task_achievement_analysis || {},
       coherence_analysis: sectionFeedback.coherence_analysis || {}
     };
-  };
-
-  // Render section score card
-  const renderSectionScoreCard = () => {
-    if (!selectedSection) return null;
-    
-    const sectionScore = sectionScores[selectedSection]?.score || 0;
-    const percentageScore = sectionScores[selectedSection]?.percentage || 0;
-    
-    // Function to get color based on score
-    const getScoreColor = (score) => {
-      if (score >= 7) return 'text-green-600';
-      if (score >= 5.5) return 'text-blue-600';
-      if (score >= 4) return 'text-amber-600';
-      return 'text-red-600';
-    };
-    
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-        <div className="flex justify-between items-center">
-          <h3 className="text-base font-medium text-gray-800">Current Section: {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)}</h3>
-        </div>
-        
-        <div className="mt-3 flex flex-col items-center">
-          <div className="h-24 w-24 mb-2">
-            <CircularProgress percentage={overallGrade} />
-          </div>
-        </div>
-        
-        <div className="mt-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Attempts remaining</span>
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div 
-                  key={i}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    i < sectionAttempts[selectedSection]
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm scale-100'
-                      : 'bg-gray-200 scale-90 opacity-40'
-                  }`}
-                />
-              ))}
-              <span className={`ml-2 text-sm font-medium ${
-                sectionAttempts[selectedSection] === 0 
-                  ? 'text-red-500' 
-                  : sectionAttempts[selectedSection] === 1
-                    ? 'text-orange-500'
-                    : 'text-blue-600'
-              }`}>
-                {sectionAttempts[selectedSection]}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   // Consistent card renderer for all analysis types (except grammar)
@@ -569,45 +488,25 @@ const WritingSidebar = ({
       {Object.keys(sectionsData).length > 0 ? (
         // When we have sections data, show overall progress and current section
         <>
+        
           {/* Current section score */}
-          {renderSectionScoreCard()}
+          <SectionScoreCard
+            selectedSection={selectedSection}
+            sectionScores={sectionScores}
+            sectionAttempts={sectionAttempts}
+            sectionsData={sectionsData}
+            feedbackData={feedbackData}
+          />
+
           
           {/* Overall progress */}
-<div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-  <h3 className="text-base font-medium text-gray-800">Overall Progress</h3>
-  <div className="mt-2">
-    {Object.keys(sectionsData).map(section => {
-      // Assuming the grade is already on a 0-100 scale
-      const score = sectionsData[section]?.grade || 0;
-      // Use the score directly as percentage (assuming it's already 0-100)
-      const percentage = Math.min(100, Math.round(score));
-      
-      return (
-        <div key={section} className="mb-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 capitalize">{section}</span>
-            <span className="text-sm font-medium text-blue-600">
-              {score.toFixed(1)}/100.0
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-            <div 
-              className="bg-blue-500 rounded-full h-2" 
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-        </div>
-      );
-    })}
-  </div>
-</div>
+            <OverallProgress sectionsData={sectionsData} /> 
+        
         </>
       ) : (
         // When no sections data, show the current grade
         <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
-          <h3 className="text-base font-medium text-gray-800">Current Grade</h3>
-          <CircularProgress percentage={grade} />
-          
+          <h3 className="text-base font-medium text-gray-800">Current Grade</h3>       
           {isGraded && (
             <>
               <CompactScoreIndicator 
