@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from "react-router-dom";
-import CircularProgress from './Sidebar/ScoreCard/CircularProgress';
+import CircularProgress from '../Sidebar/ScoreCard/CircularProgress';
 
 const WritingModeExitManager = ({ 
   sectionsData, 
   onExit, 
-  onContinue,
-  userName = "Student" 
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
@@ -48,10 +46,8 @@ const WritingModeExitManager = ({
 
     sections.forEach(section => {
       if (sectionsData[section] && typeof sectionsData[section].grade === 'number') {
-        // Use the actual grade from sectionsData (assuming it's already on a 0-100 scale)
         const sectionScore = Math.min(100, Math.max(0, sectionsData[section].grade));
         
-        // The percentage is the same as the score since we're already using 0-100 scale
         const sectionPercentage = sectionScore;
         
         newSectionScores[section] = {
@@ -64,26 +60,21 @@ const WritingModeExitManager = ({
       }
     });
 
-    // Calculate the final weighted average
     const calculatedFinalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0;
-    
-    // Ensure score is within the proper range (0-100)
     const normalizedScore = Math.min(100, Math.max(0, calculatedFinalScore));
     
     setFinalScore(parseFloat(normalizedScore.toFixed(1)));
-    setPercentageScore(normalizedScore); // Percentage is the same as the score in 0-100 scale
+    setPercentageScore(normalizedScore); 
     setSectionScores(newSectionScores);
   };
 
   const generateFinalFeedback = () => {
-    // Aggregate feedback from all sections
     const sections = Object.keys(sectionsData).filter(key => 
       ['introduction', 'analysis', 'conclusion'].includes(key)
     );
     
     if (sections.length === 0) return;
 
-    // Get top improvements from each section
     const allImprovements = [];
     
     sections.forEach(section => {
@@ -109,16 +100,15 @@ const WritingModeExitManager = ({
     let feedback = '';
     
     if (finalScore >= 85) {
-      feedback = `Excellent work, ${userName}! Your essay demonstrates a strong command of English writing skills. `;
+      feedback = `Excellent work, your essay demonstrates a strong command of English writing skills. `;
     } else if (finalScore >= 70) {
-      feedback = `Good job, ${userName}. Your essay shows competent English writing skills with some areas for improvement. `;
+      feedback = `Good job, your essay shows competent english writing skills with some areas for improvement. `;
     } else if (finalScore >= 55) {
-      feedback = `${userName}, you've shown basic competency in your writing. With some focused practice, you can improve significantly. `;
+      feedback = `You've shown basic competency in your writing. With some focused practice, you can improve significantly. `;
     } else {
-      feedback = `${userName}, you've made a good start. Let's work on developing your writing skills further. `;
+      feedback = `You've, you've made a good start. Let's work on developing your writing skills further. `;
     }
     
-    // Add specific improvements
     if (allImprovements.length > 0) {
       feedback += "Key areas to focus on: " + 
         allImprovements.slice(0, 3).map(imp => imp.trim()).join('; ') + '.';
@@ -137,7 +127,6 @@ const WritingModeExitManager = ({
       window.location.reload();
     }, 500); 
   };
-  // Function to get color class based on score (0-100 scale)
   const getScoreColorClass = (score) => {
     if (score >= 85) return "text-green-600";
     if (score >= 70) return "text-blue-600";
@@ -242,7 +231,6 @@ WritingModeExitManager.propTypes = {
   sectionsData: PropTypes.object.isRequired,
   onExit: PropTypes.func.isRequired,
   onContinue: PropTypes.func,
-  userName: PropTypes.string
 };
 
 export default WritingModeExitManager;
