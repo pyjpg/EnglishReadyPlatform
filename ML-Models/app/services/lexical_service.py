@@ -205,9 +205,9 @@ class LexicalService:
         return {
             'overall_score': round(band_score, 1),
             'component_scores': {
-                'vocabulary_diversity': round(diversity_score * 9, 1),
-                'word_sophistication': round(sophistication_score * 9, 1),
-                'academic_usage': round(academic_score * 9, 1)
+                'vocabulary_diversity': max(1, round(diversity_score * 9, 1)),
+                'word_sophistication': max(1, round(sophistication_score * 9, 1)),
+                'academic_usage': max(1, round(academic_score * 9, 1))
             },
             'detailed_analysis': analysis,
             'feedback': feedback
