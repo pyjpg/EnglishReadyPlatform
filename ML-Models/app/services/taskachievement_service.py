@@ -201,7 +201,7 @@ class TaskAchievementService:
             return {"topic_adherence": 0.5, "element_scores": {}, "is_on_topic": True}
 
     def _analyze_question_alignment(self, text: str, question_desc: str = None, 
-                                  question_requirements: str = None) -> Dict[str, Any]:
+                                question_requirements: str = None) -> Dict[str, Any]:
         """Analyze how well the submission aligns with the specific question."""
         if not question_desc and not question_requirements:
             return None
@@ -240,9 +240,10 @@ class TaskAchievementService:
                             from numpy import dot
                             from numpy.linalg import norm
                             
-                            # Calculate cosine similarity
-                            cos_sim = dot(phrase_vec, sent_vec) / (norm(phrase_vec) * norm(sent_vec)) 
-                            similarity_scores.append(cos_sim)
+                            # Calculate cosine similarity manually
+                            if norm(phrase_vec) * norm(sent_vec) != 0:  # Avoid division by zero
+                                cos_sim = dot(phrase_vec, sent_vec) / (norm(phrase_vec) * norm(sent_vec))
+                                similarity_scores.append(cos_sim)
                     
                     # If any sentence has high similarity, consider the phrase addressed
                     if similarity_scores and max(similarity_scores) > 0.6:
@@ -255,18 +256,31 @@ class TaskAchievementService:
                 alignment_score = 0.5  # Default if no key phrases found
             else:
                 alignment_score = len(addressed_phrases) / len(key_phrases)
+            
+            # Calculate semantic similarity with sklearn's cosine_similarity
+            from sklearn.metrics.pairwise import cosine_similarity
+            
+            # Get embeddings
+            text_embedding = self.semantic_model.encode(text)
+            question_embedding = self.semantic_model.encode(combined_question)
+            
+            text_embedding_2d = text_embedding.reshape(1, -1)
+            question_embedding_2d = question_embedding.reshape(1, -1)
+            
+            question_similarity = float(cosine_similarity(text_embedding_2d, question_embedding_2d)[0][0])
                 
             return {
                 "overall_score": alignment_score,
                 "addressed_elements": addressed_phrases,
                 "missing_elements": missing_phrases,
                 "total_elements": len(key_phrases),
-                "addressed_count": len(addressed_phrases)
+                "addressed_count": len(addressed_phrases),
+                "semantic_similarity": question_similarity
             }
             
         except Exception as e:
             logger.error(f"Error analyzing question alignment: {e}")
-            return {"overall_score": 0.5, "addressed_elements": [], "missing_elements": []}
+            return {"overall_score": 0.5, "addressed_elements": [], "missing_elements": []} 
 
     def _check_word_count(self, doc, task_type: str) -> Dict[str, Any]:
         """Check if response meets word count requirements."""
