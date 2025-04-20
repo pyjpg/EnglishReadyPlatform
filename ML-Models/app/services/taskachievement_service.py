@@ -4,7 +4,7 @@ from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 import nltk
 import logging
-from ..schemas.submission import SubmissionCreate
+from schemas.submission import SubmissionCreate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

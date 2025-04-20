@@ -1,0 +1,10 @@
+{
+  "total_samples": 13,
+  "mean_squared_error": 1.4147077731601325,
+  "root_mean_squared_error": 1.1894148868919256,
+  "mean_absolute_error": 0.8740127002075853,
+  "r2_score": -0.21982455951052238,
+  "average_percentage_difference": 12.469985750193976,
+  "exact_band_match_percent": 30.76923076923077,
+  "within_half_band_percent": 61.53846153846154
+}
