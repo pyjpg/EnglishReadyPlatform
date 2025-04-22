@@ -25,19 +25,6 @@ const WritingArea = ({ textAreaRef, onSubmit }) => {
     setTimeout(() => setIsLoading(false), 800);
   }, []);
 
-  const handleSubmit = () => {
-    
-    
-    setIsSubmitting(true);
-    if (onSubmit) {
-      onSubmit(text)  
-        .catch(error => {
-          console.error('Error submitting writing:', error);
-        })
-        .finally(() => setIsSubmitting(false));
-    }
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 relative">

@@ -5,12 +5,12 @@ from . import models
 from . import schemas
 from .database import engine, get_db
 from .models.submission import Submission
-from transformers import pipeline
-import nltk
+import nltk  # Keep NLTK for other services
 from nltk.tokenize import sent_tokenize
 from .services.lexical_service import LexicalService
 from .services.taskachievement_service import TaskAchievementService
 from .services.CoherenceCohensionService import CoherenceCohesionService
+from .services.grammar_service import GrammarService  # New grammar service
 import logging
 
 # Configure logging
@@ -23,83 +23,22 @@ try:
 except Exception as e:
     logger.error(f"Failed to download NLTK punkt: {e}")
 
-class GrammarService:
-    def __init__(self):
-        try:
-            # Load the CoLA model for grammatical acceptability
-            self.grammar_checker = pipeline(
-                "text-classification",
-                model="textattack/bert-base-uncased-COLA",
-                device=-1  # Use CPU. Change to 0 for GPU
-            )
-            logger.info("Grammar checker model loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load grammar checker model: {e}")
-            raise RuntimeError("Failed to initialize grammar service")
-
-    def analyze_grammar(self, text: str) -> dict:
-        try:
-            # Split text into sentences
-            sentences = sent_tokenize(text)
-
-            if not sentences:
-                raise ValueError("No valid sentences found in the text")
-
-            # Analyze each sentence
-            sentence_scores = []
-            total_score = 0
-
-            for sentence in sentences:
-                result = self.grammar_checker(sentence)[0]
-                score = result['score']
-                sentence_scores.append({
-                    'sentence': sentence,
-                    'score': score
-                })
-                total_score += score
-
-            # Calculate average score and convert to IELTS scale (1-9)
-            avg_score = total_score / len(sentences)
-            ielts_grammar_score = self._convert_to_ielts_scale(avg_score)
-
-            return {
-                'overall_score': round(ielts_grammar_score, 1),
-                'raw_score': round(avg_score, 3),
-                'sentence_analysis': sentence_scores,
-                'feedback': self._generate_feedback(avg_score)
-            }
-        except Exception as e:
-            logger.error(f"Error analyzing grammar: {e}")
-            raise
-
-    def _convert_to_ielts_scale(self, cola_score: float) -> float:
-        return 1 + (cola_score * 8)
-
-    def _generate_feedback(self, score: float) -> str:
-        if score > 0.8:
-            return "Excellent grammar with sophisticated structures."
-        elif score > 0.6:
-            return "Good grammar with occasional errors that don't impede understanding."
-        elif score > 0.4:
-            return "Adequate grammar but with noticeable errors."
-        else:
-            return "Significant grammatical errors that affect understanding."
-
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Initialize GrammarService
+# Initialize services
 grammar_service = None
 lexical_service = None
 coherence_service = None    
 taskachievement_service = None
+
 @app.on_event("startup")
 async def startup_event():
     global grammar_service, lexical_service, taskachievement_service, coherence_service
     try:
-        grammar_service = GrammarService()
+        grammar_service = GrammarService()  # Using the new GrammarService implementation
         lexical_service = LexicalService()
         taskachievement_service = TaskAchievementService()
         coherence_service = CoherenceCohesionService()
@@ -133,7 +72,42 @@ async def submit_writing(
         )
         
         # Analyze all aspects
-        grammar_analysis = grammar_service.analyze_grammar(submission.text)
+        raw_grammar_analysis = grammar_service.analyze_grammar(submission.text)
+        
+        # Create sentences from text for analysis if not available
+        sentences = sent_tokenize(submission.text) if hasattr(nltk, 'sent_tokenize') else [submission.text]
+        
+        # Convert raw grammar analysis to the format expected by the schema
+        grammar_analysis = {
+            'overall_score': raw_grammar_analysis['score'],
+            'raw_score': raw_grammar_analysis.get('weighted_error_rate', 0),
+            'feedback': raw_grammar_analysis['feedback'],
+            # Create sentence analysis structure compatible with the expected format
+            'sentence_analysis': [],
+            # Include the new data fields
+            'error_details': raw_grammar_analysis.get('errors', []),
+            'error_categories': raw_grammar_analysis.get('error_categories', {}),
+            'error_rate': raw_grammar_analysis.get('error_rate', 0)
+        }
+        
+        # Generate sentence analysis from either errors or tokenized sentences
+        if raw_grammar_analysis.get('errors'):
+            # Use errors to create sentence analysis
+            grammar_analysis['sentence_analysis'] = [
+                {
+                    'sentence': error['context'],
+                    'score': max(0.0, 1.0 - (0.2 * (i + 1)))  # Simulated scores decreasing by severity
+                } for i, error in enumerate(raw_grammar_analysis.get('errors', []))
+            ]
+        else:
+            # Use tokenized sentences with a standard score
+            grammar_analysis['sentence_analysis'] = [
+                {
+                    'sentence': sentence,
+                    'score': raw_grammar_analysis['score'] / 9.0  # Normalize to 0-1 range
+                } for sentence in sentences
+            ]
+        
         lexical_analysis = lexical_service.analyze_lexical(submission.text)
         task_analysis = taskachievement_service.analyze_submission(submission)
         coherence_analysis = coherence_service.analyze_coherence_cohesion(submission.text)
@@ -143,7 +117,7 @@ async def submit_writing(
             'grammar': 0.25,
             'lexical': 0.25,
             'task_achievement': 0.25,
-            'coherence': 0.25  # New weight for coherence
+            'coherence': 0.25
         }
 
         ielts_score = (
@@ -192,12 +166,7 @@ async def submit_writing(
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error processing submission: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error processing submission: {e}")
+        logger.error(f"Error processing submission: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/submissions/{submission_id}", response_model=schemas.submission.SubmissionResponse)

@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import os
 import json
+import logging
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, confusion_matrix
 
 # Add parent directory to path to import the services
@@ -19,48 +20,67 @@ from services.CoherenceCohensionService import CoherenceCohesionService
 
 class IELTSEvaluator:
     def __init__(self):
-        # Initialize the services
         self.grammar_service = GrammarService()
         self.lexical_service = LexicalService()
         self.task_achievement_service = TaskAchievementService()
         self.coherence_service = CoherenceCohesionService()
-        
-        # Define weights
+    
         self.weights = {
-            'grammar': 0.25,
-            'lexical': 0.25,
-            'task_achievement': 0.25,
-            'coherence': 0.25
+            'grammar': 0.30,
+            'lexical': 0.30,
+            'task_achievement': 0.20,
+            'coherence': 0.20
         }
         
-        # Load the dataset
-        self.data_path = Path(__file__).parent.parent / 'data' / 'ielts_writing_dataset.csv'
+        self.data_path = Path(__file__).parent.parent / 'data' / 'OriginalSet.csv'
+        
         self.df = pd.read_csv(self.data_path)
         self.df = self.df.dropna(subset=['Essay', 'Overall'])
         
-        # Output directory
+        # ─── DEFINE output_dir ─────────────────────────────────────────────────────
         self.output_dir = Path(__file__).parent / 'benchmark_results'
         self.output_dir.mkdir(exist_ok=True, parents=True)
-    
-    def calculate_combined_score(self, essay, question):
+        # ────────────────────────────────────────────────────────────────────────────
+        
+        # Configure logger
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        global logger
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        handler = logging.FileHandler(self.output_dir / 'evaluation.log')
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+         
+    def _convert_to_serializable(self, obj):
+        """Convert NumPy types to Python native types for JSON serialization"""
+        if isinstance(obj, dict):
+            return {self._convert_to_serializable(k): self._convert_to_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_to_serializable(i) for i in obj]
+        elif isinstance(obj, (np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.float64, np.float32)):
+            return float(obj)
+        else:
+            return obj
+            
+    def calculate_combined_score(self, essay, question, task_type):
         """Calculate the combined score using all services with weights."""
         try:
-            # Get individual scores
             grammar_score = self.grammar_service.analyze_grammar(essay)
             lexical_score = self.lexical_service.analyze_lexical(essay)
             
-            # Fix: Use keyword arguments for task_achievement_service
             task_result = self.task_achievement_service.analyze_task_achievement(
                 text=essay, 
-                task_type="essay",
+                task_type=task_type,
                 question_desc=question
             )
-            # Extract the band_score from the result
             task_score = task_result.get('band_score', 0)
             
             coherence_score = self.coherence_service.analyze_coherence_cohesion(essay)
             
-            # For consistency, ensure all scores are floats
             if isinstance(grammar_score, dict):
                 grammar_score = grammar_score.get('overall_score', 0)
             if isinstance(lexical_score, dict):
@@ -131,6 +151,14 @@ class IELTSEvaluator:
             question = row['Question']
             actual_score = float(row['Overall'])
             
+            tt = int(row.get('Task_Type', 1))
+            if tt == 1:
+                mapped_task_type = "problem_solution"
+            elif tt == 2:
+                mapped_task_type = "argument"
+            else:
+                mapped_task_type = "discussion"
+            
             # Get component actual scores if available
             if 'Range_Accuracy' in row and pd.notna(row['Range_Accuracy']):
                 component_actual['grammar'].append((idx, float(row['Range_Accuracy'])))
@@ -141,8 +169,21 @@ class IELTSEvaluator:
             if 'Coherence_Cohesion' in row and pd.notna(row['Coherence_Cohesion']):
                 component_actual['coherence'].append((idx, float(row['Coherence_Cohesion'])))
             
-            # Calculate predicted score
-            predicted_score, component_scores = self.calculate_combined_score(essay, question)
+            
+            predicted_score, component_scores = self.calculate_combined_score(essay, question, mapped_task_type)
+            actual_grammar         = dict(component_actual['grammar']).get(idx, np.nan)
+            actual_lexical         = dict(component_actual['lexical']).get(idx, np.nan)
+            actual_task_response   = dict(component_actual['task_achievement']).get(idx, np.nan)
+            actual_coherence_score = dict(component_actual['coherence']).get(idx, np.nan)
+
+            errors = {
+                'grammar_diff':       abs(component_scores['grammar']        - actual_grammar),
+                'lexical_diff':       abs(component_scores['lexical']        - actual_lexical),
+                'task_diff':          abs(component_scores['task_achievement'] - actual_task_response),
+                'coherence_diff':     abs(component_scores['coherence']       - actual_coherence_score),
+            }
+            logger.info("Component errors for idx %d: %s", idx, errors)
+            
             
             # Round to nearest 0.5 for IELTS bands
             actual_band = self.round_to_nearest_half(actual_score)
@@ -181,7 +222,7 @@ class IELTSEvaluator:
         
         # Save detailed results
         with open(self.output_dir / 'detailed_results.json', 'w') as f:
-            json.dump(results, f, indent=2)
+            json.dump(self._convert_to_serializable(results), f, indent=2) 
         
         return results
     
@@ -217,7 +258,7 @@ class IELTSEvaluator:
         
         # Save report
         with open(self.output_dir / 'overall_report.json', 'w') as f:
-            json.dump(report, f, indent=2)
+            json.dump(self._convert_to_serializable(report), f, indent=2) 
         
         # Print summary
         print("\nOverall Benchmark Results:")
@@ -294,7 +335,7 @@ class IELTSEvaluator:
         
         # Save component metrics
         with open(self.output_dir / 'component_metrics.json', 'w') as f:
-            json.dump(component_metrics, f, indent=2)
+            json.dump(self._convert_to_serializable(component_metrics), f, indent=2) 
         
         # Print summary
         print("\nComponent Metrics:")
@@ -310,19 +351,24 @@ class IELTSEvaluator:
     
     def generate_confusion_matrix(self, actual_bands, predicted_bands):
         """Generate and visualize confusion matrix."""
-        # Create all possible IELTS bands from 4 to 9
-        all_bands = np.arange(4, 9.5, 0.5)
-        
-        # Generate confusion matrix
-        cm = confusion_matrix(actual_bands, predicted_bands, labels=all_bands)
-        
-        # Plot confusion matrix
+        actual_ints = [int(round(b * 2)) for b in actual_bands]
+        pred_ints   = [int(round(b * 2)) for b in predicted_bands]
+        labels_int  = list(range(8, 19))   # 8..18 inclusive
+
+        # Generate confusion matrix on ints
+        cm = confusion_matrix(actual_ints, pred_ints, labels=labels_int)
+
+        # When plotting, you can relabel the axes back to bands:
+        tick_labels = [i / 2 for i in labels_int]
+
         plt.figure(figsize=(12, 10))
-        sns.heatmap(cm, annot=True, fmt='d', xticklabels=all_bands, yticklabels=all_bands)
+        sns.heatmap(cm, annot=True, fmt='d',
+                    xticklabels=tick_labels,
+                    yticklabels=tick_labels)
         plt.title('Confusion Matrix of IELTS Band Predictions')
         plt.xlabel('Predicted Band')
         plt.ylabel('Actual Band')
-        plt.savefig(self.output_dir / 'confusion_matrix.png')
+        plt.savefig(self.output_dir / 'confusion_matrix.png') 
     
     def generate_score_distribution(self, actual, predicted):
         """Generate score distribution visualization."""
@@ -386,8 +432,8 @@ class IELTSEvaluator:
             }
         
         # Save task metrics
-        with open(self.output_dir / 'task_type_metrics.json', 'w') as f:
-            json.dump(task_metrics, f, indent=2)
+       
+        json.dump(self._convert_to_serializable(task_metrics), indent=2)
         
         # Print summary
         print("\nTask Type Metrics:")

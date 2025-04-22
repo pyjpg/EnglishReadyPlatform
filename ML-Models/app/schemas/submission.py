@@ -26,6 +26,11 @@ class GrammarAnalysis(BaseModel):
     raw_score: float
     sentence_analysis: List[Dict[str, Any]]
     feedback: str
+    # New fields for LanguageTool-based grammar service
+    error_details: Optional[List[Dict[str, Any]]] = None
+    error_categories: Optional[Dict[str, int]] = None
+    error_rate: Optional[float] = None
+
 
 class LexicalAnalysis(BaseModel):
     overall_score: float

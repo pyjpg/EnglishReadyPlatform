@@ -5,3 +5,6 @@
 Frontend/EnglishReadyUI/.env
 *.db
 /ML-Models/.vs
+/Frontend/EnglishReadyUI/cypress/screenshots
+*.csv
+/ML-Models/app/evaluatiuon/benchmark_results

@@ -42,6 +42,18 @@ class LexicalService:
                 'section', 'sector', 'significant', 'similar', 'source',
                 'specific', 'structure', 'theory', 'variables', 'welfare'
             ])
+            
+            # Advanced vocabulary for general writing (non-academic but sophisticated)
+            self.advanced_vocabulary = set([
+                'eloquent', 'intricate', 'profound', 'elaborate', 'meticulous',
+                'articulate', 'nuanced', 'comprehensive', 'innovative', 'perceptive',
+                'insightful', 'distinctive', 'fundamental', 'rigorous', 'vivid',
+                'elegant', 'coherent', 'sophisticated', 'substantive', 'versatile',
+                'vibrant', 'compelling', 'seamless', 'discerning', 'precise',
+                'refined', 'subtle', 'adept', 'thorough', 'strategic',
+                'exceptional', 'invaluable', 'paramount', 'pivotal', 'robust',
+                'systematic', 'transformative', 'unprecedented', 'vital', 'authentic'
+            ])
 
             # Linking phrases for suggestions
             self.linking_phrases = {
@@ -66,7 +78,8 @@ class LexicalService:
                 'lexical_diversity': self._analyze_lexical_diversity(doc),
                 'word_sophistication': self._analyze_sophistication(doc),
                 'sentence_structure': self._analyze_sentence_structure(doc),
-                'academic_language': self._analyze_academic_usage(doc)
+                'academic_language': self._analyze_academic_usage(doc),
+                'advanced_vocabulary': self._analyze_advanced_vocabulary(doc)
             }
             
             # Calculate overall score and compile results
@@ -112,7 +125,15 @@ class LexicalService:
             'very': ['extremely', 'significantly', 'substantially'],
             'lot': ['numerous', 'substantial', 'considerable'],
             'get': ['obtain', 'acquire', 'attain'],
-            'make': ['establish', 'generate', 'develop']
+            'make': ['establish', 'generate', 'develop'],
+            'nice': ['pleasant', 'admirable', 'commendable'],
+            'happy': ['delighted', 'gratified', 'elated'],
+            'sad': ['melancholy', 'despondent', 'disheartened'],
+            'want': ['desire', 'aspire', 'seek'],
+            'need': ['require', 'necessitate', 'demand'],
+            'many': ['numerous', 'abundant', 'plentiful'],
+            'thing': ['element', 'component', 'aspect'],
+            'use': ['utilize', 'employ', 'implement']
         }
         return {word: sophisticated_alternatives.get(word, []) for word in basic_words}
 
@@ -124,6 +145,23 @@ class LexicalService:
         """Extract examples of short sentences"""
         return [sent.text for sent in doc.sents 
                 if len([token for token in sent if token.is_alpha]) < 10]
+                
+    def _calculate_yules_k(self, words: List[str]) -> float:
+        """Calculate Yule's K measure (vocabulary richness)"""
+        if not words or len(words) < 2:
+            return 0
+            
+        word_freq = Counter(words)
+        freq_of_freq = Counter(word_freq.values())
+        N = len(words)
+        
+        # Calculate sum of squared frequencies
+        sum_sq_freq = sum((freq * freq) * count for freq, count in freq_of_freq.items())
+        
+        # Calculate Yule's K
+        if N > 1:
+            return 10000 * (sum_sq_freq - N) / (N * N)
+        return 0
 
     def _analyze_lexical_diversity(self, doc) -> dict:
         """Analyze vocabulary range and diversity"""
@@ -132,10 +170,15 @@ class LexicalService:
         word_freq = Counter(words)
         repeated_words = self._find_repeated_words(doc)
         
+        # Calculate Type-Token Ratio (TTR) and Yule's K
+        ttr = len(unique_words) / len(words) if words else 0
+        yules_k = self._calculate_yules_k(words)
+        
         return {
             'total_words': len(words),
             'unique_words': len(unique_words),
-            'diversity_ratio': len(unique_words) / len(words) if words else 0,
+            'diversity_ratio': ttr,
+            'yules_k': yules_k,  # Lower value indicates richer vocabulary
             'repeated_words': repeated_words
         }
 
@@ -143,12 +186,20 @@ class LexicalService:
         """Analyze word sophistication level"""
         words = [token.text.lower() for token in doc if token.is_alpha]
         long_words = [word for word in words if len(word) > 7]
+        medium_words = [word for word in words if len(word) > 5 and len(word) <= 7]
         basic_words = self._identify_basic_words(doc)
+        
+        # Calculate proportion of words beyond basic vocabulary
+        basic_ratio = len(basic_words) / len(words) if words else 0
+        sophisticated_ratio = len(long_words) / len(words) if words else 0
+        medium_ratio = len(medium_words) / len(words) if words else 0
         
         return {
             'avg_word_length': sum(len(word) for word in words) / len(words) if words else 0,
-            'long_words_ratio': len(long_words) / len(words) if words else 0,
-            'sophisticated_words': long_words,
+            'long_words_ratio': sophisticated_ratio,
+            'medium_words_ratio': medium_ratio,
+            'basic_words_ratio': basic_ratio,
+            'sophisticated_words': long_words[:10],  # Show just top 10 examples
             'basic_words': basic_words
         }
 
@@ -158,9 +209,18 @@ class LexicalService:
         lengths = [len([token for token in sent if token.is_alpha]) for sent in sentences]
         short_sentences = self._extract_short_sentences(doc)
         
+        # Calculate sentence variety measures
+        if lengths:
+            avg_length = sum(lengths) / len(lengths)
+            length_variability = sum(abs(l - avg_length) for l in lengths) / len(lengths)
+        else:
+            avg_length = 0
+            length_variability = 0
+        
         return {
-            'avg_sentence_length': sum(lengths) / len(lengths) if lengths else 0,
+            'avg_sentence_length': avg_length,
             'sentence_count': len(sentences),
+            'length_variability': length_variability,  # Higher values indicate more variety
             'complex_sentences': len([l for l in lengths if l > 15]),
             'short_sentences': short_sentences
         }
@@ -175,25 +235,63 @@ class LexicalService:
             'academic_ratio': len(academic_used) / len(words) if words else 0,
             'academic_words_used': list(set(academic_used))
         }
+    
+    def _analyze_advanced_vocabulary(self, doc) -> dict:
+        """Analyze usage of advanced (non-academic but sophisticated) vocabulary"""
+        words = [token.text.lower() for token in doc if token.is_alpha]
+        advanced_used = [word for word in words if word in self.advanced_vocabulary]
+        
+        # Calculate lexical density (proportion of content words)
+        content_words = [token.text.lower() for token in doc if token.is_alpha and not token.is_stop]
+        lexical_density = len(content_words) / len(words) if words else 0
+        
+        return {
+            'advanced_words_count': len(advanced_used),
+            'advanced_ratio': len(advanced_used) / len(words) if words else 0,
+            'lexical_density': lexical_density,
+            'advanced_words_used': list(set(advanced_used))
+        }
 
     def _compile_results(self, analysis: dict) -> dict:
         """Calculate final scores and compile feedback"""
         # Calculate component scores (0-1 scale)
-        diversity_score = min(analysis['lexical_diversity']['diversity_ratio'] * 2, 1)
-        sophistication_score = min(analysis['word_sophistication']['long_words_ratio'] * 3, 1)
-        academic_score = min(analysis['academic_language']['academic_ratio'] * 5, 1)
+        diversity_score = min(analysis['lexical_diversity']['diversity_ratio'] * 1.8, 1)
         
-        # Calculate overall score (weighted average)
+        # Sophistication score now considers both long words and medium words
+        sophistication_score = min(
+            (analysis['word_sophistication']['long_words_ratio'] * 3) + 
+            (analysis['word_sophistication']['medium_words_ratio'] * 1.5), 
+            1
+        )
+        
+        # Academic score (reduced weight)
+        academic_score = min(analysis['academic_language']['academic_ratio'] * 4, 1)
+        
+        # Advanced vocabulary score (new component)
+        advanced_score = min(
+            (analysis['advanced_vocabulary']['advanced_ratio'] * 4) + 
+            (analysis['advanced_vocabulary']['lexical_density'] * 0.5), 
+            1
+        )
+        
+        # Yule's K adjustment factor (lower values of Yule's K indicate richer vocabulary)
+        yules_k = analysis['lexical_diversity']['yules_k']
+        yules_factor = max(0, min(0.2, 0.2 - (yules_k / 2000)))
+        
+        # Calculate overall score (weighted average with new weights)
         weights = {
-            'diversity': 0.3,
-            'sophistication': 0.4,
-            'academic': 0.3
+            'diversity': 0.25,
+            'sophistication': 0.35,
+            'academic': 0.20,  # Reduced from 0.3
+            'advanced': 0.20    # New component
         }
         
         overall_score = (
             diversity_score * weights['diversity'] +
             sophistication_score * weights['sophistication'] +
-            academic_score * weights['academic']
+            academic_score * weights['academic'] +
+            advanced_score * weights['advanced'] +
+            yules_factor  # Bonus for rich vocabulary
         )
         
         # Convert to IELTS band score (1-9)
@@ -207,7 +305,8 @@ class LexicalService:
             'component_scores': {
                 'vocabulary_diversity': max(1, round(diversity_score * 9, 1)),
                 'word_sophistication': max(1, round(sophistication_score * 9, 1)),
-                'academic_usage': max(1, round(academic_score * 9, 1))
+                'academic_usage': max(1, round(academic_score * 9, 1)),
+                'advanced_vocabulary': max(1, round(advanced_score * 9, 1))
             },
             'detailed_analysis': analysis,
             'feedback': feedback
@@ -225,8 +324,10 @@ class LexicalService:
         # Analyze vocabulary diversity
         diversity_ratio = analysis['lexical_diversity']['diversity_ratio']
         repeated_words = analysis['lexical_diversity']['repeated_words']
+        yules_k = analysis['lexical_diversity']['yules_k']
         
-        if diversity_ratio < 0.4:
+        # More nuanced thresholds for diversity
+        if diversity_ratio < 0.35:
             feedback['general_feedback'].append("Your vocabulary range needs improvement.")
             if repeated_words:
                 feedback['detailed_suggestions']['repeated_words'] = {
@@ -234,47 +335,77 @@ class LexicalService:
                     'examples': repeated_words,
                     'suggestions': self._suggest_alternatives(repeated_words)
                 }
-        elif diversity_ratio < 0.5:
+        elif diversity_ratio < 0.45:
             feedback['strengths'].append("You have a good foundation in vocabulary usage.")
             feedback['improvements'].append("Try to incorporate more synonyms for common words.")
         else:
             feedback['strengths'].append("Excellent vocabulary diversity.")
+        
+        # Add Yule's K insight
+        if yules_k < 100:
+            feedback['strengths'].append("Your vocabulary richness is excellent.")
+        elif yules_k < 150:
+            feedback['strengths'].append("You demonstrate good vocabulary richness.")
 
-        # Analyze sophistication
+        # Analyze sophistication with more nuance
         sophistication_data = analysis['word_sophistication']
         basic_words = sophistication_data['basic_words']
         
-        if sophistication_data['long_words_ratio'] < 0.1:
+        # Consider both long and medium words
+        combined_sophisticated_ratio = (
+            sophistication_data['long_words_ratio'] + 
+            (sophistication_data['medium_words_ratio'] * 0.5)
+        )
+        
+        if combined_sophisticated_ratio < 0.1:
             if basic_words:
                 feedback['detailed_suggestions']['basic_vocabulary'] = {
                     'issue': "Simple word choices",
-                    'examples': basic_words,
+                    'examples': basic_words[:5],  # Limit to 5 examples
                     'suggestions': self._suggest_sophisticated_alternatives(basic_words)
                 }
             feedback['improvements'].append("Consider using more sophisticated vocabulary.")
+        elif combined_sophisticated_ratio < 0.2:
+            feedback['strengths'].append("You use some sophisticated vocabulary.")
+            if basic_words:
+                feedback['improvements'].append("Continue developing your range of precise word choices.")
         else:
-            feedback['strengths'].append("Good use of sophisticated vocabulary.")
+            feedback['strengths'].append("Excellent use of sophisticated vocabulary.")
 
-        # Analyze academic language
+        # Analyze academic language with more nuanced thresholds
         academic_data = analysis['academic_language']
         
-        if academic_data['academic_ratio'] < 0.05:
-            feedback['detailed_suggestions']['academic_language'] = {
-                'issue': "Limited academic vocabulary",
-                'examples': academic_data['academic_words_used'],
+        # Check advanced vocabulary as well before criticizing academic language
+        advanced_data = analysis['advanced_vocabulary']
+        advanced_ratio = advanced_data['advanced_ratio']
+        
+        # Only suggest academic words if both academic AND advanced vocabulary are low
+        if academic_data['academic_ratio'] < 0.03 and advanced_ratio < 0.03:
+            feedback['detailed_suggestions']['vocabulary_enhancement'] = {
+                'issue': "Limited formal vocabulary",
+                'academic_examples': academic_data['academic_words_used'],
                 'suggestions': {'linking_phrases': self._suggest_linking_phrases()}
             }
-            feedback['improvements'].append("Try to incorporate more academic vocabulary.")
-        else:
+            feedback['improvements'].append("Try to incorporate more formal or academic vocabulary.")
+        elif academic_data['academic_ratio'] >= 0.03:
             feedback['strengths'].append("Good use of academic vocabulary.")
+        elif advanced_ratio >= 0.03:
+            feedback['strengths'].append("Good use of advanced vocabulary.")
 
+        # Recognize high lexical density as a strength
+        if advanced_data['lexical_density'] > 0.6:
+            feedback['strengths'].append("Your writing shows excellent lexical density with strong content words.")
+        
         # Analyze sentence structure
         sentence_data = analysis['sentence_structure']
-        if sentence_data['short_sentences']:
+        if sentence_data['length_variability'] < 3 and sentence_data['short_sentences']:
             feedback['detailed_suggestions']['sentence_structure'] = {
-                'issue': "Short, simple sentences",
-                'examples': sentence_data['short_sentences'],
+                'issue': "Limited sentence variety",
+                'examples': sentence_data['short_sentences'][:2],  # Limit examples
                 'suggestions': {'linking_phrases': self._suggest_linking_phrases()}
             }
+            feedback['improvements'].append("Try varying your sentence structures and lengths more.")
+        elif sentence_data['length_variability'] >= 5:
+            feedback['strengths'].append("Good variety in sentence structures and lengths.")
 
         return feedback

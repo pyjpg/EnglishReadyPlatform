@@ -36,6 +36,7 @@ class Submission(Base):
     coherence_score = Column(Float, nullable=True)
     coherence_feedback = Column(JSON, nullable=True)  # Stores CoherenceFeedback structure
     coherence_analysis = Column(JSON, nullable=True) 
+    
     def to_dict(self):
         """Convert model instance to dictionary with proper nested structure"""
         return {
@@ -43,6 +44,8 @@ class Submission(Base):
             'text': self.text,
             'task_type': self.task_type,
             'question_number': self.question_number,
+            'question_desc': self.question_desc,
+            'question_requirements': self.question_requirements,
             'grade': self.grade,
             'ielts_score': self.ielts_score,
             'created_at': self.created_at,
@@ -61,5 +64,10 @@ class Submission(Base):
             # Task Achievement fields
             'task_achievement_score': self.task_achievement_score,
             'task_achievement_feedback': self.task_achievement_feedback,
-            'task_achievement_analysis': self.task_achievement_analysis
+            'task_achievement_analysis': self.task_achievement_analysis,
+            
+            # Coherence fields
+            'coherence_score': self.coherence_score,
+            'coherence_feedback': self.coherence_feedback,
+            'coherence_analysis': self.coherence_analysis
         }
