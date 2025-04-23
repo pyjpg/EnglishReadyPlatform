@@ -26,10 +26,10 @@ class IELTSEvaluator:
         self.coherence_service = CoherenceCohesionService()
     
         self.weights = {
-            'grammar': 0.30,
-            'lexical': 0.30,
-            'task_achievement': 0.20,
-            'coherence': 0.20
+            'grammar': 0.25,
+            'lexical': 0.25,
+            'task_achievement': 0.25,
+            'coherence': 0.25
         }
         
         self.data_path = Path(__file__).parent.parent / 'data' / 'OriginalSet.csv'

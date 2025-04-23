@@ -4,7 +4,7 @@ from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 import nltk
 import logging
-from schemas.submission import SubmissionCreate
+from ..schemas.submission import SubmissionCreate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -129,21 +129,27 @@ class TaskAchievementService:
             # Compile feedback
             strengths = self._identify_strengths(analysis)
             improvements = self._identify_improvements(analysis)
+            wc = analysis["word_count"]["word_count"]
+            min_w, max_w = 200, 300
+            wc_frac = min(1.0, max(0.0, (wc - min_w) / (max_w - min_w)))
+            word_count_score = 0.5 + 0.5 * wc_frac
 
             return {
                 "band_score": band_score,
                 "component_scores": {
                     "topic_relevance": analysis["topic_relevance"]["topic_adherence"],
-                    # Coherence removed from component scores
-                    "word_count": 1.0 if analysis["word_count"]["meets_requirement"] else 0.5,
-                    "question_alignment": analysis.get("question_alignment", {}).get("overall_score", 0.5) 
-                    if analysis.get("question_alignment") else 0.5
+                    # smooth‐scaled word_count instead of hard cutoff
+                    "word_count": word_count_score,
+                    "question_alignment": (
+                        analysis.get("question_alignment", {}).get("overall_score", 0.5)
+                        if analysis.get("question_alignment") else 0.5
+                    )
                 },
                 "feedback": {
                     "strengths": strengths,
                     "improvements": improvements
                 },
-                **analysis  # Include full analysis for detailed feedback
+                **analysis
             }
 
         except Exception as e:
@@ -200,75 +206,58 @@ class TaskAchievementService:
             logger.error(f"Error in topic relevance analysis: {e}")
             return {"topic_adherence": 0.5, "element_scores": {}, "is_on_topic": True}
 
+    
     def _analyze_question_alignment(self, text: str, question_desc: str = None, 
                                 question_requirements: str = None) -> Dict[str, Any]:
         """Analyze how well the submission aligns with the specific question."""
         if not question_desc and not question_requirements:
             return None
-            
+
         try:
             combined_question = " ".join(filter(None, [question_desc, question_requirements]))
-            
             # Extract key phrases from question
             question_doc = self.nlp(combined_question)
             key_phrases = [
                 chunk.text for chunk in question_doc.noun_chunks
                 if len(chunk.text.split()) > 1 or not chunk.root.is_stop
             ]
-            
-            # Check if key phrases are addressed in the text
+
+            # Analyze the text
             text_doc = self.nlp(text)
             text_lower = text_doc.text.lower()
-            
             addressed_phrases = []
             missing_phrases = []
-            
+
             for phrase in key_phrases:
-                phrase_lower = phrase.lower()
-                # Check for exact phrase or semantic similarity using word vectors
-                if phrase_lower in text_lower:
+                if phrase.lower() in text_lower:
                     addressed_phrases.append(phrase)
                 else:
-                    # Check for semantic similarity
-                    phrase_vec = self.nlp(phrase).vector
-                    similarity_scores = []
-                    
-                    # Compare with each sentence
-                    for sent in text_doc.sents:
-                        if len(sent.text.strip()) > 0:
-                            sent_vec = sent.vector
-                            from numpy import dot
-                            from numpy.linalg import norm
-                            
-                            # Calculate cosine similarity manually
-                            if norm(phrase_vec) * norm(sent_vec) != 0:  # Avoid division by zero
-                                cos_sim = dot(phrase_vec, sent_vec) / (norm(phrase_vec) * norm(sent_vec))
-                                similarity_scores.append(cos_sim)
-                    
-                    # If any sentence has high similarity, consider the phrase addressed
-                    if similarity_scores and max(similarity_scores) > 0.6:
-                        addressed_phrases.append(phrase)
-                    else:
-                        missing_phrases.append(phrase)
-            
-            # Calculate alignment score
+                    missing_phrases.append(phrase)
+
+            # ─── Smooth semantic alignment ───────────────────────────────
             if not key_phrases:
-                alignment_score = 0.5  # Default if no key phrases found
+                alignment_score = 0.5
             else:
-                alignment_score = len(addressed_phrases) / len(key_phrases)
-            
-            # Calculate semantic similarity with sklearn's cosine_similarity
-            from sklearn.metrics.pairwise import cosine_similarity
-            
-            # Get embeddings
-            text_embedding = self.semantic_model.encode(text)
-            question_embedding = self.semantic_model.encode(combined_question)
-            
-            text_embedding_2d = text_embedding.reshape(1, -1)
-            question_embedding_2d = question_embedding.reshape(1, -1)
-            
-            question_similarity = float(cosine_similarity(text_embedding_2d, question_embedding_2d)[0][0])
-                
+                from sklearn.metrics.pairwise import cosine_similarity
+                sims = []
+                for phrase in key_phrases:
+                    phrase_emb = self.semantic_model.encode(phrase)
+                    # find best sentence match
+                    best = max(
+                        cosine_similarity([phrase_emb], [sent.vector])[0][0]
+                        for sent in text_doc.sents if sent.text.strip()
+                    )
+                    sims.append(best)
+                avg_sim = sum(sims) / len(sims)        # in [0.0,1.0]
+                alignment_score = 0.5 + 0.5 * avg_sim   # maps to [0.5,1.0]
+
+            # Compute overall question↔text embedding similarity
+            text_emb = self.semantic_model.encode(text)
+            ques_emb = self.semantic_model.encode(combined_question)
+            text_e2 = text_emb.reshape(1, -1)
+            ques_e2 = ques_emb.reshape(1, -1)
+            question_similarity = float(cosine_similarity(text_e2, ques_e2)[0][0])
+
             return {
                 "overall_score": alignment_score,
                 "addressed_elements": addressed_phrases,
@@ -277,10 +266,11 @@ class TaskAchievementService:
                 "addressed_count": len(addressed_phrases),
                 "semantic_similarity": question_similarity
             }
-            
+
         except Exception as e:
             logger.error(f"Error analyzing question alignment: {e}")
-            return {"overall_score": 0.5, "addressed_elements": [], "missing_elements": []} 
+            return {"overall_score": 0.5, "addressed_elements": [], "missing_elements": []}
+
 
     def _check_word_count(self, doc, task_type: str) -> Dict[str, Any]:
         """Check if response meets word count requirements."""
@@ -350,7 +340,12 @@ class TaskAchievementService:
                     "word_count": 0.2
                 }
 
-            topic_score = analysis["topic_relevance"]["topic_adherence"]
+            elem_scores = analysis["topic_relevance"]["element_scores"]
+            covered = sum(1 for v in elem_scores.values() if v > 0.4)
+            total   = len(elem_scores)
+            coverage = covered/total   # e.g. 3/4 = 0.75
+            # map 0→.5, 1→1.0
+            topic_score = 0.5 + 0.5 * coverage
             coherence_score = analysis["coherence_score"]
             meets_word_count = analysis["word_count"]["meets_requirement"]
             word_count_score = 1.0 if meets_word_count else 0.5

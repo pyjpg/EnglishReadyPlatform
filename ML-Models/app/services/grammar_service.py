@@ -22,13 +22,10 @@ class GrammarService:
         if not text:
             return {"score": 0.0, "feedback": "No text provided", "errors": []}
         
-        # Get errors from LanguageTool
         matches = self.tool.check(text)
         
-        # Count words for error rate calculation
         word_count = len(text.split())
         
-        # Extract and categorize errors
         errors = []
         error_categories = {}
         weighted_error_sum = 0
@@ -53,11 +50,8 @@ class GrammarService:
                 "rule_id": rule_id
             })
         
-        # Calculate error rates with length accommodation
         total_errors = len(matches)
         
-        # More lenient approach for longer essays
-        # Scale the error weight by essay length - longer essays get more leeway
         if word_count > 200:
             length_factor = min(1.0, 150 / word_count)  # Decreases as essays get longer
         else:
@@ -67,8 +61,6 @@ class GrammarService:
         adjusted_error_sum = weighted_error_sum * length_factor
         weighted_error_rate = adjusted_error_sum / max(word_count, 1)
         
-        # Convert to IELTS score (9-point scale)
-        # Much more generous scoring approach
         if total_errors == 0:
             # Perfect grammar gets a perfect score
             ielts_score = 9.0

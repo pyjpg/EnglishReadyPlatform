@@ -1,10 +1,10 @@
 {
-  "total_samples": 10,
-  "mean_squared_error": 1.4807799999999993,
-  "root_mean_squared_error": 1.216873041857695,
-  "mean_absolute_error": 1.0799999999999996,
-  "r2_score": -0.05769999999999942,
-  "average_percentage_difference": 16.77976051726051,
-  "exact_band_match_percent": 0.0,
-  "within_half_band_percent": 40.0
+  "total_samples": 30,
+  "mean_squared_error": 1.1325000000000003,
+  "root_mean_squared_error": 1.0641898326896382,
+  "mean_absolute_error": 0.8683333333333335,
+  "r2_score": -0.005177514792899185,
+  "average_percentage_difference": 12.644239311886373,
+  "exact_band_match_percent": 13.333333333333334,
+  "within_half_band_percent": 60.0
 }

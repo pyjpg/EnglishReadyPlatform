@@ -73,7 +73,8 @@ async def submit_writing(
         
         # Analyze all aspects
         raw_grammar_analysis = grammar_service.analyze_grammar(submission.text)
-        
+        grammar_score  = raw_grammar_analysis["score"]
+        grammar_errors = raw_grammar_analysis.get("errors", []) 
         # Create sentences from text for analysis if not available
         sentences = sent_tokenize(submission.text) if hasattr(nltk, 'sent_tokenize') else [submission.text]
         
@@ -85,13 +86,13 @@ async def submit_writing(
             # Create sentence analysis structure compatible with the expected format
             'sentence_analysis': [],
             # Include the new data fields
-            'error_details': raw_grammar_analysis.get('errors', []),
+            'error_details':   grammar_errors,
             'error_categories': raw_grammar_analysis.get('error_categories', {}),
-            'error_rate': raw_grammar_analysis.get('error_rate', 0)
+            'error_rate':       raw_grammar_analysis.get('error_rate', 0),
         }
         
         # Generate sentence analysis from either errors or tokenized sentences
-        if raw_grammar_analysis.get('errors'):
+        if grammar_errors: 
             # Use errors to create sentence analysis
             grammar_analysis['sentence_analysis'] = [
                 {

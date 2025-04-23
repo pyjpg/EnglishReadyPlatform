@@ -8,102 +8,75 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from app.services.grammar_service import GrammarService
-
 class TestGrammarService:
     
     @pytest.fixture
     def grammar_service(self):
-        with patch('services.grammar_service.pipeline') as mock_pipeline:
-            # Configure the mock pipeline to return a predefined result
-            mock_checker = MagicMock()
-            mock_pipeline.return_value = mock_checker
-            
-            service = GrammarService()
-            service.grammar_checker = mock_checker
-            yield service
+        """Fixture to create a GrammarService instance for tests"""
+        return GrammarService()
     
-    def test_convert_to_ielts_scale(self, grammar_service):
-        # Test the conversion from COLA score to IELTS scale
-        assert grammar_service._convert_to_ielts_scale(0) == 1.0
-        assert grammar_service._convert_to_ielts_scale(0.5) == 5.0
-        assert grammar_service._convert_to_ielts_scale(1.0) == 9.0
-        assert grammar_service._convert_to_ielts_scale(0.75) == 7.0
+    def test_initialization(self, grammar_service):
+        """Test that the service initializes properly"""
+        assert grammar_service is not None
+        assert grammar_service.tool is not None
+        assert isinstance(grammar_service.error_weights, dict)
+        assert 'GRAMMAR' in grammar_service.error_weights
     
-    def test_generate_feedback(self, grammar_service):
-        # Test feedback generation based on different scores
-        assert "Excellent grammar" in grammar_service._generate_feedback(0.9)
-        assert "Good grammar" in grammar_service._generate_feedback(0.7)
-        assert "Adequate grammar" in grammar_service._generate_feedback(0.5)
-        assert "Significant grammatical errors" in grammar_service._generate_feedback(0.3)
+    def test_empty_text(self, grammar_service):
+        """Test handling of empty text"""
+        result = grammar_service.analyze_grammar("")
+        
+        assert result["score"] == 0.0
+        assert "No text provided" in result["feedback"]
+        assert len(result["errors"]) == 0
     
-    def test_analyze_grammar_single_sentence(self, grammar_service):
-        # Test with a single sentence
-        test_text = "This is a test sentence."
+    def test_perfect_grammar(self, grammar_service):
+        """Test text with no grammar errors"""
+        text = "This sentence is grammatically correct. It has proper punctuation and spelling."
+        result = grammar_service.analyze_grammar(text)
         
-        # Mock the grammar checker response
-        grammar_service.grammar_checker.return_value = [{'label': 'LABEL_1', 'score': 0.75}]
-        
-        result = grammar_service.analyze_grammar(test_text)
-        
-        # Verify the structure and content of the result
-        assert 'overall_score' in result
-        assert 'raw_score' in result
-        assert 'sentence_analysis' in result
-        assert 'feedback' in result
-        
-        assert result['overall_score'] == 7.0  # 1 + (0.75 * 8)
-        assert result['raw_score'] == 0.75
-        assert len(result['sentence_analysis']) == 1
-        assert result['sentence_analysis'][0]['sentence'] == test_text
-        assert result['sentence_analysis'][0]['score'] == 0.75
-        assert "Good grammar" in result['feedback']
+        assert result["score"] == 9.0
+        assert result["raw_error_count"] == 0
+        assert "Excellent grammar" in result["feedback"]
     
-    def test_analyze_grammar_multiple_sentences(self, grammar_service):
-        # Test with multiple sentences
-        test_text = "This is sentence one. This is sentence two. This is sentence three."
+    def test_common_errors(self, grammar_service):
+        """Test text with common grammar errors"""
+        text = "There is many mistake in this sentense. we dont use good grammar here"
+        result = grammar_service.analyze_grammar(text)
         
-        # Mock the grammar checker response for each sentence
-        grammar_service.grammar_checker.side_effect = [
-            [{'label': 'LABEL_1', 'score': 0.6}],
-            [{'label': 'LABEL_1', 'score': 0.8}],
-            [{'label': 'LABEL_1', 'score': 0.7}]
-        ]
-        
-        result = grammar_service.analyze_grammar(test_text)
-        
-        # Calculate expected values
-        expected_avg = (0.6 + 0.8 + 0.7) / 3
-        expected_ielts = 1 + (expected_avg * 8)
-        
-        # Verify the results
-        assert result['overall_score'] == pytest.approx(expected_ielts)
-        assert result['raw_score'] == pytest.approx(expected_avg)
-        assert len(result['sentence_analysis']) == 3
-        
-        # Check each sentence analysis
-        sentences = ["This is sentence one.", "This is sentence two.", "This is sentence three."]
-        scores = [0.6, 0.8, 0.7]
-        
-        for i in range(3):
-            assert result['sentence_analysis'][i]['sentence'] == sentences[i]
-            assert result['sentence_analysis'][i]['score'] == scores[i]
+        assert result["score"] < 9.0
+        assert result["raw_error_count"] > 0
+        assert len(result["errors"]) > 0
     
-    def test_analyze_grammar_empty_text(self, grammar_service):
-        # Test handling of empty text (should raise an exception)
-        with pytest.raises(Exception):
-            grammar_service.analyze_grammar("")
+    def test_specific_error_detection(self, grammar_service):
+        """Test detection of specific error types"""
+        text = "theyre going to there house tomorrow"
+        result = grammar_service.analyze_grammar(text)
+        
+        assert result["raw_error_count"] > 0
+        error_categories = result["error_categories"]
+        found_category = False
+        for category in ['GRAMMAR', 'TYPOS', 'PUNCTUATION', 'CASING']:
+            if category in error_categories and error_categories[category] > 0:
+                found_category = True
+                break
+        assert found_category
     
-    @patch('services.grammar_service.nltk.download')
-    @patch('services.grammar_service.pipeline')
-    def test_initialization(self, mock_pipeline, mock_download):
-        # Test that the service initializes correctly
-        service = GrammarService()
+    def test_long_text_scaling(self, grammar_service):
+        """Test that longer texts are scored appropriately"""
+        short_text = "This has an error."
+        long_text = "This has an error. " * 50  
         
-        # Check that NLTK punkt was downloaded
-        mock_download.assert_called_once_with('punkt')
+        short_result = grammar_service.analyze_grammar(short_text)
+        long_result = grammar_service.analyze_grammar(long_text)
         
-        # Check that the pipeline was created with correct parameters
-        mock_pipeline.assert_called_once()
-        args, kwargs = mock_pipeline.call_args
-        assert kwargs['model'] == "textattack/bert-base-uncased-COLA"
-        assert kwargs['device'] == -1
+        assert long_result["weighted_error_rate"] != short_result["weighted_error_rate"]
+    
+    def test_get_grammar_examples(self, grammar_service):
+        """Test extraction of grammar examples"""
+        text = "Their going to the store. Its not far from here."
+        examples = grammar_service.get_grammar_examples(text)
+        
+        assert len(examples) > 0
+        assert "original" in examples[0]
+        assert "suggestion" in examples[0]

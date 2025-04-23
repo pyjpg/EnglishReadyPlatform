@@ -178,7 +178,7 @@ class LexicalService:
             'total_words': len(words),
             'unique_words': len(unique_words),
             'diversity_ratio': ttr,
-            'yules_k': yules_k,  # Lower value indicates richer vocabulary
+            'yules_k': yules_k,  
             'repeated_words': repeated_words
         }
 
