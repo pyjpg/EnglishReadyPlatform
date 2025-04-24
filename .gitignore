@@ -8,3 +8,5 @@ Frontend/EnglishReadyUI/.env
 /Frontend/EnglishReadyUI/cypress/screenshots
 *.csv
 /ML-Models/app/evaluatiuon/benchmark_results
+/Backend/EnglishReadyBot.Tests/bin
+/Backend/EnglishReadyBot.Tests/obj

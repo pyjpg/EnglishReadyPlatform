@@ -27,7 +27,6 @@ const WritingModeExitManager = ({
   }, [sectionsData]);
 
   const calculateScores = () => {
-    // Calculate weighted average from all sections
     const sections = Object.keys(sectionsData).filter(key => 
       ['introduction', 'analysis', 'conclusion'].includes(key)
     );
@@ -80,23 +79,19 @@ const WritingModeExitManager = ({
     sections.forEach(section => {
       const data = sectionsData[section];
       
-      // Task achievement improvements
       if (data?.task_achievement_analysis?.feedback?.improvements?.length) {
         allImprovements.push(...data.task_achievement_analysis.feedback.improvements.slice(0, 1));
       }
       
-      // Grammar improvements
       if (data?.grammar_analysis?.feedback && typeof data.grammar_analysis.feedback === 'string') {
         allImprovements.push(data.grammar_analysis.feedback);
       }
       
-      // Coherence improvements 
       if (data?.coherence_analysis?.feedback?.improvements?.length) {
         allImprovements.push(...data.coherence_analysis.feedback.improvements.slice(0, 1));
       }
     });
     
-    // Create personalized feedback based on 0-100 scale
     let feedback = '';
     
     if (finalScore >= 85) {
@@ -136,7 +131,6 @@ const WritingModeExitManager = ({
 
   return (
     <>
-      {/* Exit Button */}
       <button
           onClick={() => setShowModal(true)}
           className="w-full px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
@@ -144,13 +138,11 @@ const WritingModeExitManager = ({
           Complete & Return to Chat
         </button>
     
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Exit Writing Mode</h2>
             
-            {/* Final Score with Circular Progress */}
             <div className="mb-6 flex items-center justify-center flex-col">
               <div className="flex flex-col items-center mb-2">
                 <CircularProgress percentage={percentageScore} />
@@ -166,12 +158,10 @@ const WritingModeExitManager = ({
               <p className="text-gray-600 bg-blue-50 p-3 rounded-lg">{finalFeedback}</p>
             </div>
             
-            {/* Section Breakdown with Visual Indicators */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Section Breakdown</h3>
               <div className="space-y-4">
                 {Object.keys(sectionScores).map(section => {
-                  // Only show sections that have data
                   if (!sectionsData[section] || typeof sectionsData[section].grade !== 'number') {
                     return null;
                   }

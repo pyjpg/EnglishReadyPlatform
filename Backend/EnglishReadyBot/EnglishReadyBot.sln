@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnglishReadyBot", "EnglishReadyBot.csproj", "{3C888C63-08CA-4169-8CAD-AD98D14AACE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnglishReadyBot", "EnglishReadyBot.csproj", "{3C888C63-08CA-4169-8CAD-AD98D14AACE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnglishReadyBot.Tests", "..\EnglishReadyBot.Tests\EnglishReadyBot.Tests.csproj", "{B4DA66FA-730F-4D5F-9150-3814C2DA8873}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{3C888C63-08CA-4169-8CAD-AD98D14AACE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C888C63-08CA-4169-8CAD-AD98D14AACE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C888C63-08CA-4169-8CAD-AD98D14AACE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4DA66FA-730F-4D5F-9150-3814C2DA8873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4DA66FA-730F-4D5F-9150-3814C2DA8873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4DA66FA-730F-4D5F-9150-3814C2DA8873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4DA66FA-730F-4D5F-9150-3814C2DA8873}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
