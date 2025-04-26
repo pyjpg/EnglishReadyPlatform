@@ -20,108 +20,102 @@ namespace EnglishReadyBot.Dialogs
 {
     public class MainDialog : ComponentDialog
     {
-        private readonly LUISRecognizer _luisRecognizer;
-        private readonly ILogger _logger;
+        private readonly string InitialDialogId = nameof(MainDialog);
 
-        // Dependency injection uses this constructor to instantiate MainDialog
-        public MainDialog(LUISRecognizer luisRecognizer, ILogger<MainDialog> logger)
+        public MainDialog()
             : base(nameof(MainDialog))
         {
-
-            _luisRecognizer = luisRecognizer;
-            _logger = logger;
-
-            AddDialog(new TextPrompt(nameof(TextPrompt)));
-            AddDialog(new ChoicePrompt(nameof(ChoicePrompt)));
-            AddDialog(new GrammarDialog());
-            AddDialog(new WritingDialog());
+            AddDialog(new ConfirmPrompt(nameof(ConfirmPrompt)));
             AddDialog(new ExerciseDialog());
-
 
             var waterfallSteps = new WaterfallStep[]
             {
                 IntroStepAsync,
-                ActStepAsync,
-                FinalStepAsync,
+                ConfirmExerciseAsync,
+                ProcessConfirmationAsync,
+                FinalStepAsync
             };
 
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), waterfallSteps));
 
-            // The initial child Dialog to run.
             InitialDialogId = nameof(WaterfallDialog);
-        }
-
-        // Shows a warning if the requested From or To cities are recognized as entities but they are not in the Airport entity list.
-        // In some cases LUIS will recognize the From and To composite entities as a valid cities but the From and To Airport values
-        // will be empty if those entity values can't be mapped to a canonical item in the Airport.
-        private static async Task ShowWarningForUnsupportedCities(ITurnContext context, LUISRecognizer luisResult, CancellationToken cancellationToken)
-        {
         }
 
         private async Task<DialogTurnResult> IntroStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(
-                MessageFactory.Text("What operation you would like to perform?"), cancellationToken);
+            // Provide a welcoming message that introduces the writing exercise
+            string welcomeMessage = stepContext.Options?.ToString() ??
+                "Welcome! I can help you improve your writing skills with a specialized writing exercise.";
 
-            List<string> operationList = new List<string> { "Grammar Correction", "Writing Tips", "Writing Exercise" };
-            // Create card
-            var card = new AdaptiveCard(new AdaptiveSchemaVersion(1, 0))
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text(welcomeMessage), cancellationToken);
+
+            // Directly ask if they want to proceed with the writing exercise
+            return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions
             {
-                // Use LINQ to turn the choices into submit actions
-                Actions = operationList.Select(choice => new AdaptiveSubmitAction
-                {
-                    Title = choice,
-                    Data = choice,  // This will be a string
-                }).ToList<AdaptiveAction>(),
-            };
-            // Prompt
-            return await stepContext.PromptAsync(nameof(ChoicePrompt), new PromptOptions
-            {
-                Prompt = (Activity)MessageFactory.Attachment(new Attachment
-                {
-                    ContentType = AdaptiveCard.ContentType,
-                    // Convert the AdaptiveCard to a JObject
-                    Content = JObject.FromObject(card),
-                }),
-                Choices = ChoiceFactory.ToChoices(operationList),
-                // Don't render the choices outside the card
-                Style = ListStyle.None,
-            },
-                cancellationToken);
-        } 
-        // User Input Prompt
-        private async Task<DialogTurnResult> ActStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+                Prompt = MessageFactory.Text("Would you like to try our writing exercise?"),
+            }, cancellationToken);
+        }
+
+        private async Task<DialogTurnResult> ConfirmExerciseAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
+            // Get the user's response
+            bool wantsToDoExercise = (bool)stepContext.Result;
 
-            var operation = (stepContext.Result as FoundChoice)?.Value;
+            // Store the result for the next step
+            stepContext.Values["doExercise"] = wantsToDoExercise;
 
-            if (string.IsNullOrEmpty(operation))
+            return await stepContext.NextAsync(null, cancellationToken);
+        }
+
+        private async Task<DialogTurnResult> ProcessConfirmationAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        {
+            bool doExercise = (bool)stepContext.Values["doExercise"];
+
+            if (doExercise)
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Invalid operation selected."), cancellationToken);
-                return await stepContext.EndDialogAsync(null, cancellationToken);
+                // User wants to do the exercise, so start that dialog
+                return await stepContext.BeginDialogAsync(nameof(ExerciseDialog), null, cancellationToken);
             }
-
-            switch (operation)
+            else
             {
-                case "Writing Exercise":
-                    return await stepContext.BeginDialogAsync(nameof(ExerciseDialog), null, cancellationToken);
-                case "Grammar Correction":
-                    return await stepContext.BeginDialogAsync(nameof(GrammarDialog), null, cancellationToken);
-                case "Writing Tips":
-                    return await stepContext.BeginDialogAsync(nameof(WritingDialog), null, cancellationToken);
-            }
-             return await stepContext.NextAsync(null, cancellationToken);
+                // User doesn't want to do the exercise
+                await stepContext.Context.SendActivityAsync(
+                    MessageFactory.Text("No problem! You can always come back when you're ready to try the writing exercise."),
+                    cancellationToken);
 
-           
+                // No other options, so ask if they want to reconsider
+                return await stepContext.PromptAsync(nameof(ConfirmPrompt), new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("Would you like to reconsider and try the writing exercise now?"),
+                }, cancellationToken);
+            }
         }
 
         private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            
+            // Check if this is coming from the reconsideration prompt
+            if (stepContext.Result is bool reconsiderResult)
+            {
+                if (reconsiderResult)
+                {
+                    // User changed their mind and now wants to do the exercise
+                    return await stepContext.BeginDialogAsync(nameof(ExerciseDialog), null, cancellationToken);
+                }
+                else
+                {
+                    // User still doesn't want to do the exercise
+                    await stepContext.Context.SendActivityAsync(
+                        MessageFactory.Text("I understand. Feel free to come back anytime you'd like to try the writing exercise!"),
+                        cancellationToken);
+                }
+            }
 
-            // Restart the main dialog with a different message the second time around
-            var promptMessage = "What else can I do for you?";
-            return await stepContext.ReplaceDialogAsync(InitialDialogId, promptMessage, cancellationToken);
+            // End the dialog with a goodbye message
+            await stepContext.Context.SendActivityAsync(
+                MessageFactory.Text("Thanks for using our writing assistant. Have a great day!"),
+                cancellationToken);
+
+            return await stepContext.EndDialogAsync(null, cancellationToken);
         }
     }
 }
