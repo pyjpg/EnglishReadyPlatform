@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const GrammarDetailsContent = ({ grammarAnalysis, ieltsScore }) => {
-  console.log(grammarAnalysis);
   if (!grammarAnalysis) return null;
 
   // Color scoring system

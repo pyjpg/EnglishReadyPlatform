@@ -77,13 +77,9 @@ const WritingSidebar = ({
   const getDbGrade = () => {
     return feedbackData?.grade || 0; 
   };
-  console.log(sectionsData);
 
-  const overallGrade = useOverallGrade(sectionsData, feedbackData);
-  console.log(overallGrade);
 
   const circularGrade = getDbGrade();
-  console.log(circularGrade, overallGrade);
   const {
     grammar_analysis: grammarAnalysis = {},
     lexical_analysis: lexicalAnalysis = {},

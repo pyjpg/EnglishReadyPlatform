@@ -11,7 +11,7 @@ jest.mock('../../Grading/FeedbackModalManager', () => ({
   ),
 }));
 
-jest.mock('../../ExitManager', () => ({
+jest.mock('../../ExitManger/ExitManager', () => ({
   __esModule: true,
   default: ({ onExit }) => <button data-testid="exit-button" onClick={onExit}>Exit</button>,
 }));

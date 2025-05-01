@@ -11,9 +11,6 @@ const SectionScoreCard = ({ selectedSection, sectionScores, sectionAttempts, fee
   
   const sectionDisplayName = selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1);
   
-  console.log("SectionScoreCard received feedbackData:", feedbackData);
-  console.log("Section score for", selectedSection, ":", sectionScore);
-  
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-5">
       <div className="flex justify-between items-center">
