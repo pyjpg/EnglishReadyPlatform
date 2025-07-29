@@ -1,0 +1,50 @@
+Test Cases:
+
+Good TA
+The table presents data on the number of people from five different nationalities living in each other's countries across Europe. The nationalities included are British, German, Italian, Polish, and Spanish, with figures shown for where each group resides.
+
+Overall, it is clear that Spain and Germany host the largest numbers of foreign residents among the five nationalities, while Poland has the lowest figures in both hosting and sending populations. Spanish nationals living abroad represent the largest group, particularly in Italy and Germany.
+
+In terms of absolute numbers, the Spanish population living in Italy is the highest, with approximately 550,000 people, followed by the 426,000 Italians residing in Germany. Spain also has a significant number of British (391,000) and German (196,000) residents. By contrast, Poland has relatively low figures in all categories, with the highest number being 100,000 Italians living there, and only 170 Spanish nationals.
+
+Notably, Britain is home to a substantial number of German and Italian nationals — 297,000 and 110,000 respectively — but receives fewer Polish and Spanish immigrants in comparison. Meanwhile, Germany is a major host country, with over a million total foreign residents from the listed nationalities.
+
+Notably, Britain is home to a substantial number of German and Italian nationals — 297,000 and 110,000 respectively — but receives fewer Polish and Spanish immigrants in comparison. Meanwhile, Germany is a major host country, with over a million total foreign residents from the listed nationalities.
+
+In conclusion, Spain and Germany serve as major destinations for intra-European migration, particularly for the Italian and British populations. In contrast, Poland appears to be both a minor destination and origin of migration among these groups.
+, particularly for the Italian and British populations. In contrast, Poland appears to be both a minor destination and origin of migration among these groups.
+
+
+1. Under 250 words 
+
+low word count submission to show under 20 words: The table gives data. It shows people living in different countries. The graph is about population.
+
+
+
+
+Medium- Long TA submission:
+
+Migration has long played a crucial role in shaping cultural identities and economic landscapes across nations. Countries with strong economies often attract individuals seeking better opportunities, while those with limited resources tend to experience emigration. Historical ties, language similarities, and bilateral agreements can also influence migration patterns. In recent decades, the European Union has made cross-border movement easier, enabling citizens to live and work across member states with fewer restrictions. This increased mobility has led to diverse and multicultural communities, especially in urban areas. As societies evolve, so too do the reasons people relocate — from economic necessity to lifestyle preferences or political stability.
+
+
+Bad Grammar: The tabel show peoples mov between countrys. Many spainish live in other place outsides their own. Germany have much peoples from Italy living there. Britsh is go to Spain very often. Poland not has many foreigners living in it. The numbers is differ by every country, and some places has more than others. Also many italians lives in Germany but less in Poland. Spain and Germany have big numbers of foreign peoples living there. British peoples like to go to Spain for holiday and sometimes live there. The data is not same for all nationalitys and the trend change from place to place. Some countrys have more foreigners than others, and some have less. The tabel shows all this informations very clearly.
+
+Medium Grammar: TThe tabel shows how peoples from five different countrys live in each other’s nations. Germany and Spain has a high number of foriegn peoples living there. Many Italian people lives in Germany but not so much in Poland. Poland have less foriegn people compared to other countrys. British peoples goes to Spain also for work and holidy. The trends are different for each nationality and changes depends on the country. Some nations have more foreigners then others and some have less. The table gives informations about how many people from each country live in other places. It is clear that Germany and Spain are popular places for foreign peoples. The number of foreigners in Poland is small compare to other countries. The British tend to move mostly to Spain. The table show this data in a simple way.
+
+Good Grammar:
+The table shows the number of people from five nationalities who live in each other’s countries across Europe. Spain and Germany appear to host the highest numbers of foreign residents, while Poland has relatively low figures. Most sentences are well-structured, and subject-verb agreement is consistently correct. The use of passive voice and complex sentences reflects a strong command of grammar.
+
+bad Coherence & Cohesion:
+The table shows how people live in countries. Spain and Germany have more people. But Poland is low. Also, British live in Spain. The numbers are different. It is possible to see changes.
+
+
+strong Coherence:
+The table illustrates cross-national residency among five European countries. Overall, Spain and Germany host the highest number of foreign residents, whereas Poland records the fewest. In particular, a significant number of Italians live in Germany, while Spanish nationals commonly reside in Italy. By contrast, Poland exhibits low inbound and outbound migration. These patterns suggest clear disparities in population movement across the region.
+
+bad Vocab: 
+The tabel show number of peoples. Big number in some countrys. Germany have many peoples. Poland small peoples. People go to places. This writting is about that. Some countrys have more peoples than other. Many peoples live outsides their own country. Britsh peoples go Spain many times. The number of foreigners is different in every countrys. Some places have big number, some places have small number. The tabel tell all this informations.
+
+
+
+GOod Vocab: 
+The table provides data on intra-European migration, highlighting the distribution of nationals across five countries. Spain and Germany emerge as primary host nations, particularly for Italian and British expatriates. In contrast, Poland reports minimal cross-border residency. Overall, the table reflects substantial variation in demographic dispersal across the region.
