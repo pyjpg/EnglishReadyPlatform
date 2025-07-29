@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FeedbackModalsManager from '../Grading/FeedbackModalManager';
-import WritingModeExitManager from '../ExitManger/ExitManager';
+import WritingModeExitManager from '../ExitManager/ExitManager';
 import OverallProgress from './OverallProgress';
 import { useOverallGrade } from '../../../hooks/useOverallGrade';
 import SectionScoreCard from './ScoreCard/SectionScoreCard';
